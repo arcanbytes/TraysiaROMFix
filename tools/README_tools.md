@@ -2,6 +2,8 @@
 
 Esta carpeta contiene scripts Python utilizados durante el análisis y corrección del bug de guardado en la ROM distribuida por Shinyuden.
 
+> 🔗 Este contenido forma parte del repositorio [TraysiaROMAnalyzer](https://github.com/arcanbytes/TraysiaROMAnalyzer)
+
 ## 📄 Descripción de los scripts
 
 ### `fix_rom_traysia_shinyuden_nop.py`
