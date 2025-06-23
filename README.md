@@ -65,7 +65,7 @@ El usuario [TodoRPG](https://youtu.be/5akNdXm_BiM) experimentó un bug al salvar
 
 Se ha creado un parche que elimina estos 12 bytes extra y restaura el comportamiento original.
 
-📦 [`patches/Traysia_Shinyuden_ROM_Patch_RemoveExtraSaveData.ips`](patches/Traysia_Shinyuden_ROM_Patch_RemoveExtraSaveData.ips)
+📦 [`patches/Traysia_Shinyuden_ROM_nop_patch.ips`](patches/Traysia_Shinyuden_ROM_nop_patch.ips)
 
 ### 🔧 Cómo lo hace
 - Localiza el bloque de código donde se escriben los datos `_data` en SRAM.
@@ -74,7 +74,7 @@ Se ha creado un parche que elimina estos 12 bytes extra y restaura el comportami
 
 ### 🧾 Cómo aplicar el parche
 1. Abre **Lunar IPS** o cualquier herramienta compatible.
-2. Selecciona `Traysia_Shinyuden_ROM_Patch_RemoveExtraSaveData.ips` como parche.
+2. Selecciona `patches/Traysia_Shinyuden_ROM_nop_patch.ips` como parche.
 3. Aplica sobre la ROM: `Traysia (W).bin`
 4. Ejecuta la ROM parcheada en emulador, FPGA o flashcart (EverDrive, etc).
 
@@ -191,10 +191,10 @@ Si has detectado errores o quieres contribuir, puedes abrir un issue o forkear e
 
 ## ⚙️ Generar la ROM parcheada directamente (sin IPS)
 
-Puedes usar el script `tools/fix_rom_traysia_shinyuden.py` para crear una versión corregida de la ROM directamente a partir de `Traysia (W).bin`, sin necesidad de usar Lunar IPS:
+Puedes usar el script `tools/fix_rom_traysia_shinyuden_nop.py` para crear una versión corregida de la ROM directamente a partir de `Traysia (W).bin`, sin necesidad de usar Lunar IPS:
 
 ```bash
-python tools/fix_rom_traysia_shinyuden.py
+python tools/fix_rom_traysia_shinyuden_nop.py
 ```
 
 Este script corrige la rutina de guardado que añadía datos corruptos a cada slot de partida.
