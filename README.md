@@ -8,7 +8,7 @@ Este repositorio documenta y soluciona un bug crítico en la ROM de *Traysia* pa
 
 ## ❗ Bug de Guardado en Versión Shinyuden
 
-Se ha detectado que la ROM distribuida por Shinyuden introduce **12 bytes adicionales** en cada slot de guardado de SRAM. Estos bytes contienen el texto `"_data "` con valores intercalados `0xFF`, lo que produce una estructura de guardado mayor a la esperada por el juego original (51 bytes).
+Se ha detectado que la ROM distribuida por Shinyuden introduce **13 bytes adicionales** en cada slot de guardado de SRAM. Estos bytes contienen el texto `"_data "` con valores intercalados `0xFF`, lo que produce una estructura de guardado mayor a la esperada por el juego original (51 bytes).
 
 ### ⚠️ Consecuencias observadas
 - Corrupción de partidas guardadas.
@@ -17,7 +17,7 @@ Se ha detectado que la ROM distribuida por Shinyuden introduce **12 bytes adicio
 - Posible reinicio de partida al cargar datos corruptos.
 
 ### 🔎 Análisis técnico
-- Comparando la versión USA original con la versión Shinyuden, los slots de guardado tienen **12 bytes extra** al final.
+- Comparando la versión USA original con la versión Shinyuden, los slots de guardado tienen **13 bytes extra** al final.
 - La ROM modifica las rutinas de guardado e introduce el texto `"_data "` (intercalado con `0xFF`) justo después del bloque útil de datos.
 - Esto desborda la estructura esperada por el motor del juego, que no fue diseñado para manejar datos extra.
 
@@ -63,7 +63,7 @@ El usuario [TodoRPG](https://youtu.be/5akNdXm_BiM) experimentó un bug al salvar
 
 ## ✅ Solución aplicada: Parche IPS
 
-Se ha creado un parche que elimina estos 12 bytes extra y restaura el comportamiento original.
+Se ha creado un parche que elimina estos 13 bytes extra y restaura el comportamiento original.
 
 📦 [`patches/Traysia_Shinyuden_ROM_nop_patch.ips`](patches/Traysia_Shinyuden_ROM_nop_patch.ips)
 
