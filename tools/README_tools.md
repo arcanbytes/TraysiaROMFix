@@ -1,21 +1,19 @@
-
 # 🛠️ Herramientas incluidas en TraysiaROMFix
 
 Esta carpeta contiene scripts Python utilizados durante el análisis y corrección del bug de guardado en la ROM distribuida por Shinyuden.
 
 ## 📄 Descripción de los scripts
 
-### `fix_rom_traysia_shinyuden.py`
+### `fix_rom_traysia_shinyuden_nop.py`
+Genera una versión corregida de `Traysia (W).bin` sustituyendo el bloque que añadía `_data` por instrucciones NOP (`0x4E71`). Equivale a aplicar el parche [`../patches/Traysia_Shinyuden_ROM_nop_patch.ips`](../patches/Traysia_Shinyuden_ROM_nop_patch.ips).
 
-Corrige la ROM original de Shinyuden (`Traysia (W).bin`) eliminando el patrón corrupto `"_data "` intercalado con `0xFF` que se añade al final de cada slot de guardado.
-
-💡 Útil si prefieres trabajar directamente con la ROM en vez de aplicar un parche `.ips`.
+### `fix_rom_ips_generator.py`
+Pequeña utilidad para crear un parche IPS a partir de la ROM original y su versión modificada. Se usó para generar `../patches/Traysia_Shinyuden_ROM_nop_patch.ips`.
 
 ### `fix_traysia_srm.py`
 Corrige directamente un archivo `.srm` sin necesidad de usar Lunar IPS.
 
 💡 Útil para validar partidas antiguas o reparar archivos de cartuchos físicos directamente en vez de aplicar un parche `.ips`.
-
 
 ---
 
@@ -29,11 +27,6 @@ Compara dos archivos `.srm` mostrando diferencias byte a byte por slot.
 - Útil para detectar rutinas defectuosas de guardado.
 
 ### `fix_save_ips_generator.py`
-Genera el parche `.ips` para corregir archivos `.srm` afectados. (puedes usar Lunar IPS en su lugar)
+Genera el parche `.ips` para corregir archivos `.srm` afectados (puedes usar Lunar IPS en su lugar).
 - Aplica reemplazo de 13 bytes extra por `0xFF` en cada slot.
-
-
-### `Traysia_Shinyuden_RemoveExtraSaveData.py`
-Script que genera el parche `.ips` que corrige la ROM modificada por Shinyuden (puedes usar Lunar IPS en su lugar)
-
-
+- El parche resultante se incluye como [`../patches/FixSave_TraysiaShinyuden_RemoveExtraSaveBytes.ips`](../patches/FixSave_TraysiaShinyuden_RemoveExtraSaveBytes.ips).
