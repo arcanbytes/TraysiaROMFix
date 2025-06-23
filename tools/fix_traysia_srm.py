@@ -1,27 +1,29 @@
-import sys
+import argparse
+from pathlib import Path
 
-def fix_traysia_shinyuden_srm(input_path, output_path=None):
-    with open(input_path, "rb") as f:
-        data = bytearray(f.read())
+ALLOWED_SIZES = {8192, 16384, 65536}
 
-    if len(data) != 8192:
-        print("⚠️ Archivo SRM no válido (tamaño esperado: 8192 bytes).")
+
+def fix_traysia_shinyuden_srm(input_path: str, output_path: str):
+    data = bytearray(Path(input_path).read_bytes())
+
+    if len(data) not in ALLOWED_SIZES:
+        print("⚠️ Archivo SRM no válido (tama\u00f1o permitido: 8 KB, 16 KB o 64 KB).")
         return
 
     for slot in range(4):
         offset = slot * 64 + 51
         data[offset:offset+13] = bytes([0xFF] * 13)
 
-    if not output_path:
-        output_path = input_path.replace(".srm", "_fixed.srm")
-
-    with open(output_path, "wb") as f:
-        f.write(data)
+    Path(output_path).write_bytes(data)
 
     print(f"✅ Archivo corregido guardado como: {output_path}")
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Uso: python fix_traysia_srm.py archivo_original.srm [archivo_salida.srm]")
-    else:
-        fix_traysia_shinyuden_srm(sys.argv[1], sys.argv[2] if len(sys.argv) > 2 else None)
+    parser = argparse.ArgumentParser(description="Corrige un archivo .srm de Traysia Shinyuden")
+    parser.add_argument("input_file", help="Archivo .srm a reparar")
+    parser.add_argument("-o", "--output", dest="output", help="Nombre del archivo de salida")
+    args = parser.parse_args()
+
+    output_file = args.output or args.input_file.replace(".srm", "_fixed.srm")
+    fix_traysia_shinyuden_srm(args.input_file, output_file)
