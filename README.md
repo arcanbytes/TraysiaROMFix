@@ -96,10 +96,10 @@ Si tienes saves creados con la ROM de Shinyuden, puedes repararlos con el parche
 También puedes usar el script `tools/fix_traysia_srm.py`:
 
 ```bash
-python tools/fix_traysia_srm.py archivo.srm
+python tools/fix_traysia_srm.py archivo.srm -o salida.srm
 ```
 
-Se generará un nuevo `archivo_fixed.srm` con la estructura corregida.
+Si no indicas `-o`, se creará automáticamente `archivo_fixed.srm` con la estructura corregida.
 
 🔬 Estado: Pendiente de validación con corruptos reales.
 
