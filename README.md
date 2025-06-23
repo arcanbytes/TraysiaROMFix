@@ -1,8 +1,6 @@
-# 🧩 Traysia – Fix Guardado y Análisis de Versiones (Shinyuden Edition)
+# 🧩 Traysia (Shinyuden Edition) – Fix Guardado y Análisis de Versiones
 
 Este repositorio documenta y soluciona un bug crítico en la ROM de *Traysia* para Mega Drive distribuida por **Shinyuden**, y reúne herramientas de análisis utilizadas durante la investigación.
-
-> 🔗 Este contenido forma parte del repositorio [TraysiaROMAnalyzer](https://github.com/arcanbytes/TraysiaROMAnalyzer)
 
 ---
 
@@ -11,10 +9,10 @@ Este repositorio documenta y soluciona un bug crítico en la ROM de *Traysia* pa
 Se ha detectado que la ROM distribuida por Shinyuden introduce **13 bytes adicionales** en cada slot de guardado de SRAM. Estos bytes contienen el texto `"_data "` con valores intercalados `0xFF`, lo que produce una estructura de guardado mayor a la esperada por el juego original (51 bytes).
 
 ### ⚠️ Consecuencias observadas
-- Corrupción de partidas guardadas.
-- Reaparición de textos corruptos o en japonés.
-- Fallos graves de carga en capítulos avanzados (capítulo 4 reportado).
-- Posible reinicio de partida al cargar datos corruptos.
+
+El usuario [TodoRPG](https://youtu.be/5akNdXm_BiM) reporta el siguientes problema: 
+
+Corrupción de las partidas guardadas ocurrida alrededor del capítulo 4 (de 5). En cierto punto del juego, durante una accion de salvado el juego se congela momentaneamente y aparecen graficos corruptos en pantalla y textos en japonés. Esto provoca que, en su siguiente sesión de juego, se le reinicie la partida desde el principio como consecuencia de cargar estos datos corruptos.
 
 ### 🔎 Análisis técnico
 - Comparando la versión USA original con la versión Shinyuden, los slots de guardado tienen **13 bytes extra** al final.
@@ -78,7 +76,18 @@ Se ha creado un parche que elimina estos 13 bytes extra y restaura el comportami
 3. Aplica sobre la ROM: `Traysia (W).bin`
 4. Ejecuta la ROM parcheada en emulador, FPGA o flashcart (EverDrive, etc).
 
-🔬 Estado: probado con partidas nuevas y `.srm` simulados, pendiente de validación con saves avanzados o corruptos reales.
+#### ⚙️ Generar la ROM parcheada directamente (Phyton)
+
+Puedes usar el script `tools/fix_rom_traysia_shinyuden_nop.py` para crear una versión corregida de la ROM directamente a partir de `Traysia (W).bin`, sin necesidad de usar Lunar IPS:
+
+```bash
+python tools/fix_rom_traysia_shinyuden_nop.py
+```
+
+Este script corrige la rutina de guardado que añadía datos corruptos a cada slot de partida.
+
+
+🔬 Estado: probado con partidas nuevas en el emulador KEGA Fusion y en un Flashcart de las mismas caracteristicas que el juego original en una Analogue Mega Sg (FPGA). Pendiente de validación con saves avanzados.
 
 ## 🩹 Arreglar archivos de guardado existentes
 
@@ -91,6 +100,9 @@ python tools/fix_traysia_srm.py archivo.srm
 ```
 
 Se generará un nuevo `archivo_fixed.srm` con la estructura corregida.
+
+🔬 Estado: Pendiente de validación con corruptos reales.
+
 ---
 
 ## 🛠️ Herramientas incluidas
@@ -134,7 +146,7 @@ python traysia_rom_analyzer.py
 Utilidad para comparar estructuras `.srm` y detectar diferencias por slot de guardado.
 
 #### ¿Qué hace?
-- Carga dos archivos `.srm` de 8 KB (tamaño estándar en Traysia)
+- Carga dos archivos `.srm`. 
 - Divide cada archivo en bloques de 64 bytes (1 por slot)
 - Compara los primeros 51 bytes reales de cada bloque y muestra diferencias
 
@@ -150,7 +162,7 @@ python srm_compare_util.py archivo1.srm archivo2.srm
 - Lista de slots iguales o con diferencias
 - Muestra los bytes en hexadecimal si difieren
 
-Esta herramienta fue clave para identificar saves corruptos generados por la ROM de Shinyuden.
+Esta herramienta fue clave para identificar las diferencias en los datos guardados generados por la ROM de Shinyuden.
 
 ---
 
@@ -167,7 +179,7 @@ Resultado detectado:
 ```bash
 ⚠️  Diferencias encontradas en el slot 1:
   Traysia (W).srm                → ... FF 5F FF 64 FF 61 FF 74 FF 61 FF 20 ...
-  Traysia_USA_RealisticSave.srm → ... FF FF FF FF FF FF FF FF FF FF FF FF ...
+  Traysia (USA).srm → ... FF FF FF FF FF FF FF FF FF FF FF FF ...
 ```
 
 Los bytes adicionales "_data " intercalados con 0xFF en la versión Shinyuden no existen en la versión original. Esta anomalía provocaba que el guardado de partidas sobrescribiera datos fuera de su bloque asignado, corrompiendo partidas (especialmente en los slots más avanzados o múltiples).
@@ -196,17 +208,3 @@ Licencia: MIT – puedes usar, modificar y compartir este contenido libremente.
 Si has detectado errores o quieres contribuir, puedes abrir un issue o forkear este repositorio.
 
 ---
-
-
----
-
-## ⚙️ Generar la ROM parcheada directamente (sin IPS)
-
-Puedes usar el script `tools/fix_rom_traysia_shinyuden_nop.py` para crear una versión corregida de la ROM directamente a partir de `Traysia (W).bin`, sin necesidad de usar Lunar IPS:
-
-```bash
-python tools/fix_rom_traysia_shinyuden_nop.py
-```
-
-Este script corrige la rutina de guardado que añadía datos corruptos a cada slot de partida.
-
