@@ -13,8 +13,8 @@ def generate_traysia_save_fix_rom(input_rom_path: str, output_rom_path: str):
     """
     rom = bytearray(Path(input_rom_path).read_bytes())
 
-    # Bloque identificado en offset 0x1FD00 + (0x15 * 16), tamaño 32 bytes
-    offset = 0x1FD00 + (0x15 * 16)
+    # Bloque identificado en offset 0x1B520 (rutina que escribe "_data" en SRAM)
+    offset = 0x1B520
     block_size = 32
 
     # Instrucción NOP (68K): 0x4E71 (2 bytes)

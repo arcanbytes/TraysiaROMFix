@@ -70,6 +70,9 @@ Se ha creado un parche que elimina estos 13 bytes extra y restaura el comportami
 - Sustituye esas instrucciones por `NOPs` (`0x4E71`), que no afectan el resto del sistema de guardado.
 - Esto restaura la estructura original de 51 bytes por slot.
 
+Se comprobó que esta rutina se encuentra en el offset `0x1B520` de la ROM.
+El offset `0x1FE50` corresponde a datos de la tabla de enemigos y no ejecuta instrucciones de guardado.
+
 ### 🧾 Cómo aplicar el parche
 1. Abre **Lunar IPS** o cualquier herramienta compatible.
 2. Selecciona `patches/Traysia_Shinyuden_ROM_nop_patch.ips` como parche.

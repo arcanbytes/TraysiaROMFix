@@ -21,9 +21,9 @@ def create_ips_patch(original_path, patched_path, output_path, start_offset, len
 
 if __name__ == "__main__":
     create_ips_patch(
-        original_path="Traysia (W).bin",
-        patched_path="Traysia (W)_patched.bin",
-        output_path="Traysia_Shinyuden_ROM_Patch_RemoveExtraSaveData.ips",
-        start_offset=0x1FD00,
-        length=0x300
+        original_path="roms/Traysia (W).bin",
+        patched_path="roms/Traysia (W)_nop_patch.bin",
+        output_path="patches/Traysia_Shinyuden_ROM_nop_patch.ips",
+        start_offset=0x1B520,
+        length=32
     )
