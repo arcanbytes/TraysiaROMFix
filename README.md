@@ -80,6 +80,17 @@ Se ha creado un parche que elimina estos 12 bytes extra y restaura el comportami
 
 🔬 Estado: probado con partidas nuevas y `.srm` simulados, pendiente de validación con saves avanzados o corruptos reales.
 
+## 🩹 Arreglar archivos de guardado existentes
+
+Si tienes saves creados con la ROM de Shinyuden, puedes repararlos con el parche [`patches/FixSave_TraysiaShinyuden_RemoveExtraSaveBytes.ips`](patches/FixSave_TraysiaShinyuden_RemoveExtraSaveBytes.ips), que elimina los bytes extra de cada slot.
+
+También puedes usar el script `tools/fix_traysia_srm.py`:
+
+```bash
+python tools/fix_traysia_srm.py archivo.srm
+```
+
+Se generará un nuevo `archivo_fixed.srm` con la estructura corregida.
 ---
 
 ## 🛠️ Herramientas incluidas
