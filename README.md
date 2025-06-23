@@ -101,6 +101,16 @@ python tools/fix_traysia_srm.py archivo.srm -o salida.srm
 
 Si no indicas `-o`, se creará automáticamente `archivo_fixed.srm` con la estructura corregida.
 
+### ℹ️ Tamaños habituales del archivo `.srm`
+Dependiendo del dispositivo, los saves pueden medir **8 KB** (algunos emuladores
+antiguos) o **16 KB**/ **64 KB** en hardware real.
+Tanto el parche [`patches/FixSave_TraysiaShinyuden_RemoveExtraSaveBytes.ips`](patches/FixSave_TraysiaShinyuden_RemoveExtraSaveBytes.ips)
+como el script `fix_traysia_srm.py` funcionan con archivos de cualquier tamaño y
+solo modifican los primeros cuatro slots.
+
+> Si el script muestra `archivo SRM no válido`, comprueba que el fichero tenga
+> exactamente 8, 16 o 64 KB y no esté dañado ni comprimido.
+
 🔬 Estado: Pendiente de validación con corruptos reales.
 
 ---
