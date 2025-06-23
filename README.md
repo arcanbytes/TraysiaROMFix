@@ -92,6 +92,10 @@ Este script corrige la rutina de guardado que añadía datos corruptos a cada sl
 ## 🩹 Arreglar archivos de guardado existentes
 
 Si tienes saves creados con la ROM de Shinyuden, puedes repararlos con el parche [`patches/FixSave_TraysiaShinyuden_RemoveExtraSaveBytes.ips`](patches/FixSave_TraysiaShinyuden_RemoveExtraSaveBytes.ips), que elimina los bytes extra de cada slot.
+Este parche se generó automáticamente con `tools/fix_save_ips_generator.py`, que guarda el archivo directamente en la carpeta `patches/` y reproduce exactamente la misma lógica que el script de reparación. Para recrearlo basta con ejecutar:
+```bash
+python tools/fix_save_ips_generator.py
+```
 
 También puedes usar el script `tools/fix_traysia_srm.py`:
 

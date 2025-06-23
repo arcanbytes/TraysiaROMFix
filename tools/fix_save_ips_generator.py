@@ -1,8 +1,10 @@
 
-# fix_save_ips_generator.py
-# Genera un parche IPS para eliminar los 13 bytes extra corruptos de cada slot de guardado en Traysia (W).srm
+# El parche sustituye los 13 bytes extra que la ROM Shinyuden inserta al final
+# de cada slot de guardado. Los datos incorrectos comienzan en el byte 51 de
+# cada bloque de 64 bytes, por lo que las posiciones a modificar son 51, 115,
+# 179 y 243. Todas se rellenan con `0xFF` para restaurar el formato original.
 
-def create_ips_patch_for_srm_fix(output_path="FixSave_TraysiaShinyuden_RemoveExtraSaveBytes.ips"):
+def create_ips_patch_for_srm_fix(output_path="patches/FixSave_TraysiaShinyuden_RemoveExtraSaveBytes.ips"):
     output = bytearray()
     output += b'PATCH'
 
