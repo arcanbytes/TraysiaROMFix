@@ -132,19 +132,94 @@ Tanto el parche [`patches/Traysia_Shinyuden_SRM_nop_patch.ips`](patches/Traysia_
 
 🔬 Estado: Pendiente de validación con corruptos reales.
 
-### 📂 Organización de las ROMs
-Guarda todas las ROMs en una carpeta llamada `roms/` ubicada en la raíz del repositorio. Tanto `tools/fix_rom_traysia_shinyuden_nop.py` como `tools/traysia_rom_analyzer.py` y otros scripts buscan los archivos directamente en esa ruta.
-* **Traysia (W).bin**: Versión oficial editada y traducida al castellano for Shynyuden en 2025. 2MB. 
-* **Traysia (World) (Evercade).md**: Reedición lanzada en 2022 por Blaze para Evercade y sistemas compatibles, incluido en el cartucho "Renovation Collection 1". 1MB. 
-* **Traysia (USA).md**:  Traduccion de la version japonesa lanzada en Estados Unidos en  Abril de 1992. 
-* **Minato no Traysia (Japan).md**:  Version original, lanzada en Japon en Febrero de 1992.
+---
 
+## 🔬 Análisis Comparativo de las Distintas Versiones de Traysia para Mega Drive
+
+Análisis técnico detallado de las distintas versiones existentes del juego Traysia para Mega Drive/Genesis, incluyendo la versión japonesa original, su localización oficial, la adaptación para Evercade y la reciente traducción al castellano publicada por Shynyuden.
+
+### 🔍 Comparación Técnica
+ #### Cabecera de ROM
+Las cabeceras son casi idénticas en todas las versiones, salvo por la fecha del copyright:
+- Japón: (C)T-49 1991.DEC
+- USA y posteriores: (C)T-49 1992.Jan
+
+Ninguna ROM especifica región (J, U, E), lo que sugiere que se compiló sin ese metadato.
+
+#### Hashes y Checksums
+| Versión | MD5 (recorte) | Tamaño | Diferencias |
+|---|---|---|---|
+| Japón | `75d9...21b2b` | 1MB | - |
+| USA | `98d9...a1af4` | 1MB | 870.000+ bytes distintos con respecto a Japón |
+| Evercade | `9d83...ddaee` | 1MB | Solo 1.361 bytes diferentes respecto a USA |
+| Español | `db15...60222` | 2MB | ROM expandida, texto y scripts reubicados |
+
+#### Diferencias binaria directa
+- Japón vs USA: 83% de la ROM es diferente. No es solo traducción, sino reestructuración profunda.
+- USA vs Evercade: cambios mínimos (cabecera, firmas, compatibilidad).
+- Japón vs Español: casi 2MB de diferencia total. Se expande la ROM, se reorganiza texto y se introducen scripts nuevos.
+
+#### Tabla de Equivalencias
+| Versión | Nombre de Archivo | Tamaño | Idioma | Deriva de | Cambios Principales |
+|---|---|---|---|---|---|
+| Minato no Traysia (Japón) | Minato no Traysia (Japan).md | 1MB | Japonés | Original | Versión base. Fecha interna: 1991.DEC |
+| Traysia (USA) | Traysia (USA).md | 1MB | Inglés | Japonesa | Traducción oficial. Añade textos en inglés y ajustes en código |
+| Traysia (Evercade) | Traysia (World) (Evercade).md | 1MB | Inglés | USA | Solo modifica metadatos. Compatibilidad Evercade |
+| Traysia (Español – Shynyuden) | Traysia (W).bin | 2MB | Español | Japonesa | Traducción completa. ROM expandida, texto reorganizado |
+
+#### Conclusiones de la Comparación
+- La versión USA de Traysia no es solo una traducción: incluye ajustes profundos en el código.
+- La versión Evercade parte de la USA y realiza cambios menores, probablemente solo en la cabecera.
+- La versión en español de Shynyuden parte de la japonesa y expande la ROM a 2MB reales, reorganizando texto y posiblemente scripts.
+- El análisis de diferencias mediante parches .IPS y comparación binaria es una herramienta fundamental para la preservación y documentación de estas versiones.
+
+### Comportamiento del sistema de guardado en Traysia
+Durante el proceso de ingeniería inversa de Traysia, se identificaron diferencias relevantes en la gestión de SRAM entre versiones regionales del juego. Específicamente::
+- La versión japonesa utiliza un sistema de guardado que genera archivos .srm de 32 KB.
+
+- La versión americana modifica dicha lógica, generando archivos de 16 KB.
+
+- La versión publicada por Shinyuden, basada en la americana, produce archivos .srm de 64 KB cuando se ejecuta en hardware real (Archivo dumpleado), pero de 16 KB cuando se ejecuta en emulador.
+
+#### ¿Por qué ocurre esto? Modificación de rutina de guardado
+Comparando los archivos generados por ambas versiones, se detectó que la versión USA realiza una sobrescritura parcial del código de salvado original japonés, reduciendo el volumen de datos escritos a SRAM. Este cambio parece orientado a optimizar el uso de memoria, ya que el cartucho original americano probablemente incorporaba solo 16 KB de SRAM.
+
+No obstante, en la versión moderna de Shinyuden, esta ROM se ejecuta sobre una PCB flash con 64 KB de SRAM —como las comúnmente disponibles en el mercado actual—. Al ejecutar el juego en hardware real, se observa que:
+
+El sistema de guardado detecta dinámicamente la cantidad total de SRAM disponible.
+
+En función de esta detección, utiliza toda la SRAM expuesta por el cartucho, generando un .srm de 64 KB.
+
+Este comportamiento no se manifiesta en emuladores, limitando la escritura a 16 KB incluso si la lógica interna del juego está preparada para manejar más.
+
+#### Implicaciones prácticas y detección del problema
+Este diseño dinámico, combinado con la lógica de guardado heredada de la versión USA, parece ser el origen de los problemas de guardado reportados por usuarios (como el identificado por TodoRPG). Específicamente:
+
+- La ROM graba datos extendidos en SRAM cuando detecta espacio adicional disponible.
+
+- Estos datos adicionales no se esperan en las herramientas de emulación o en entornos donde se limiten a los 16 KB originales, lo que puede causar errores de lectura o incompatibilidad al transferir saves entre plataformas.
+
+#### Confirmación empírica
+El diagnóstico se confirmó a través de:
+- Comparaciones hexadecimales entre .srm generados en emuladores y en hardware real.
+- Desensamblado de la ROM USA/ESP, identificando patrones de escritura modificados respecto a la versión JAP.
+- Generación de archivos .srm desde múltiples entornos (Mega Sg, EverDrive, Kega Fusion).
+- Inspección de la lógica de detección de SRAM, que permite inferir que el juego utiliza un esquema de escritura condicional, en función del tamaño de la SRAM mapeada.
+
+Este comportamiento fue reproducido sistemáticamente en consolas FPGA y dispositivos flashcart, lo que refuerza la hipótesis de que el código de la versión Shinyuden contiene una rutina adaptativa que no se activa plenamente en emulación.
 
 ---
 
 ## 🛠️ Herramientas incluidas
 
 Este repositorio incluye una descripción detallada de los scripts desarrollados para el análisis y validación. Puedes encontrar una dfescripción de cada una de las herramientas y scripts en este [README_tools.md](tools/README_tools.md)
+
+### 📂 Organización de las ROMs
+Guarda todas las ROMs en una carpeta llamada `roms/` ubicada en la raíz del repositorio. Tanto `tools/fix_rom_traysia_shinyuden_nop.py` como `tools/traysia_rom_analyzer.py` y otros scripts buscan los archivos directamente en esa ruta.
+* **Traysia (W).bin**: Versión oficial editada y traducida al castellano for Shynyuden en 2025. 2MB. 
+* **Traysia (World) (Evercade).md**: Reedición lanzada en 2022 por Blaze para Evercade y sistemas compatibles, incluido en el cartucho "Renovation Collection 1". 1MB. 
+* **Traysia (USA).md**:  Traduccion de la version japonesa lanzada en Estados Unidos en  Abril de 1992. 
+* **Minato no Traysia (Japan).md**:  Version original, lanzada en Japon en Febrero de 1992.
 
 ---
 
