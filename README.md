@@ -136,7 +136,7 @@ Tanto el parche [`patches/Traysia_Shinyuden_SRM_nop_patch.ips`](patches/Traysia_
 
 ## 🔬 Análisis Comparativo de las Distintas Versiones de Traysia para Mega Drive
 
-Análisis técnico detallado de las distintas versiones existentes del juego Traysia para Mega Drive/Genesis, incluyendo la versión japonesa original, su localización oficial, la adaptación para Evercade y la reciente traducción al castellano publicada por Shynyuden.
+Análisis técnico detallado de las distintas versiones existentes del juego Traysia para Mega Drive/Genesis, incluyendo la versión japonesa original, su localización oficial, la adaptación para Evercade y la reciente traducción al castellano publicada por Shinyuden.
 
 ### 🔍 Comparación Técnica
  #### Cabecera de ROM
@@ -165,7 +165,7 @@ Ninguna ROM especifica región (J, U, E), lo que sugiere que se compiló sin ese
 | Minato no Traysia (Japón) | Minato no Traysia (Japan).md | 1MB | Japonés | Original | Versión base. Fecha interna: 1991.DEC |
 | Traysia (USA) | Traysia (USA).md | 1MB | Inglés | Japonesa | Traducción oficial. Añade textos en inglés y ajustes en código |
 | Traysia (Evercade) | Traysia (World) (Evercade).md | 1MB | Inglés | USA | Solo modifica metadatos. Compatibilidad Evercade |
-| Traysia (Español – Shynyuden) | Traysia (W).bin | 2MB | Español | Japonesa | Traducción completa. ROM expandida, texto reorganizado |
+| Traysia (Español – Shinyuden) | Traysia (W).bin | 2MB | Español | Japónesa | Traducción completa. ROM expandida, texto reorganizado |
 
 #### Conclusiones de la Comparación
 - La versión USA de Traysia no es solo una traducción: incluye ajustes profundos en el código.
@@ -212,14 +212,13 @@ Este comportamiento fue reproducido sistemáticamente en consolas FPGA y disposi
 
 ## 🛠️ Herramientas incluidas
 
-Este repositorio incluye una descripción detallada de los scripts desarrollados para el análisis y validación. Puedes encontrar una dfescripción de cada una de las herramientas y scripts en este [README_tools.md](tools/README_tools.md)
-
+Este repositorio incluye una descripción detallada de los scripts desarrollados para el análisis y validación. Puedes encontrar una descripción de cada una de las herramientas y scripts en este [README_tools.md](tools/README_tools.md)
 ### 📂 Organización de las ROMs
 Guarda todas las ROMs en una carpeta llamada `roms/` ubicada en la raíz del repositorio. Tanto `tools/fix_rom_traysia_shinyuden_nop.py` como `tools/traysia_rom_analyzer.py` y otros scripts buscan los archivos directamente en esa ruta.
-* **Traysia (W).bin**: Versión oficial editada y traducida al castellano for Shynyuden en 2025. 2MB. 
+* **Traysia (W).bin**: Versión oficial editada y traducida al castellano por Shinyuden en 2025. 2MB. 
 * **Traysia (World) (Evercade).md**: Reedición lanzada en 2022 por Blaze para Evercade y sistemas compatibles, incluido en el cartucho "Renovation Collection 1". 1MB. 
-* **Traysia (USA).md**:  Traduccion de la version japonesa lanzada en Estados Unidos en  Abril de 1992. 
-* **Minato no Traysia (Japan).md**:  Version original, lanzada en Japon en Febrero de 1992.
+* **Traysia (USA).md**:  Traducción de la versión japonesa lanzada en Estados Unidos en abril de 1992. 
+* **Minato no Traysia (Japan).md**:  versión original, lanzada en Japón en febrero de 1992.
 
 ---
 

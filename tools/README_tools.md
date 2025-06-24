@@ -12,7 +12,7 @@ Genera una versi√≥n corregida de `Traysia (W).bin` sustituyendo el bloque que a√
 ---
 
 ### `fix_traysia_srm.py`
-Corrige directamente un archivo `.srm`. Equivale a aplicar el parche [`../patches/Traysia_Shinyuden_SRM_nop_patch.ips`](../patches/Traysia_Shinyuden_SRM_nop_patc.ips).
+Corrige directamente un archivo `.srm`. Equivale a aplicar el parche [../patches/Traysia_Shinyuden_SRM_nop_patch.ips](../patches/Traysia_Shinyuden_SRM_nop_patch.ips).
 
 ---
 

@@ -1,4 +1,10 @@
 from pathlib import Path
+import hashlib
+
+# MD5 checksum of the original "Traysia (W).bin" ROM distributed by Shinyuden
+# Replace this value with the full hash if different
+EXPECTED_MD5 = "db1529b9d6383bdb5b2d6c969cef6022"
+
 
 def generate_traysia_save_fix_rom(input_rom_path: str, output_rom_path: str):
     """
@@ -11,8 +17,19 @@ def generate_traysia_save_fix_rom(input_rom_path: str, output_rom_path: str):
         input_rom_path: Ruta de la ROM original de Traysia (W).bin
         output_rom_path: Ruta donde se escribirá la ROM parcheada
     """
-    rom = bytearray(Path(input_rom_path).read_bytes())
 
+    data = Path(input_rom_path).read_bytes()
+
+    md5_hash = hashlib.md5(data).hexdigest()
+    if md5_hash != EXPECTED_MD5:
+        print(f"⚠️  MD5 diferente al esperado.\n  Esperado: {EXPECTED_MD5}\n  Obtenido: {md5_hash}")
+        cont = input("¿Continuar de todos modos? [y/N]: ")
+        if cont.lower() != "y":
+            print("Abortando.")
+            return
+
+    rom = bytearray(data)
+    
     # Bloque identificado en offset 0x1B520 (rutina que escribe "_data" en SRAM)
     offset = 0x1B520
     block_size = 32
