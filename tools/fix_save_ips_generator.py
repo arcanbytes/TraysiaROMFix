@@ -4,7 +4,7 @@
 # cada bloque de 64 bytes, por lo que las posiciones a modificar son 51, 115,
 # 179 y 243. Todas se rellenan con `0xFF` para restaurar el formato original.
 
-def create_ips_patch_for_srm_fix(output_path="patches/FixSave_TraysiaShinyuden_RemoveExtraSaveBytes.ips"):
+def create_ips_patch_for_srm_fix(output_path="patches/Traysia_Shinyuden_SRM_nop_patch.ips"):
     output = bytearray()
     output += b'PATCH'
 

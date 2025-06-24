@@ -9,26 +9,54 @@ Esta carpeta contiene scripts Python utilizados durante el análisis y correcci�
 ### `fix_rom_traysia_shinyuden_nop.py`
 Genera una versión corregida de `Traysia (W).bin` sustituyendo el bloque que añadía `_data` por instrucciones NOP (`0x4E71`). Equivale a aplicar el parche [`../patches/Traysia_Shinyuden_ROM_nop_patch.ips`](../patches/Traysia_Shinyuden_ROM_nop_patch.ips).
 
-### `fix_rom_ips_generator.py`
-Pequeña utilidad para crear un parche IPS a partir de la ROM original y su versión modificada. Se usó para generar `../patches/Traysia_Shinyuden_ROM_nop_patch.ips`.
+---
 
 ### `fix_traysia_srm.py`
-Corrige directamente un archivo `.srm` sin necesidad de usar Lunar IPS.
-
-💡 Útil para validar partidas antiguas o reparar archivos de cartuchos físicos directamente en vez de aplicar un parche `.ips`.
+Corrige directamente un archivo `.srm`. Equivale a aplicar el parche [`../patches/Traysia_Shinyuden_SRM_nop_patch.ips`](../patches/Traysia_Shinyuden_SRM_nop_patc.ips).
 
 ---
 
 ### `traysia_rom_analyzer.py`
-Analiza y compara versiones de la ROM de Traysia.
-- Extrae cabeceras, detecta diferencias binarias, y genera un resumen por versión.
+
+Un script en Python para comparar y analizar distintas versiones del juego *Traysia* para Sega Mega Drive / Genesis. 
+
+#### ¿Qué hace?
+- Extrae y muestra la cabecera de la ROM (título, región, checksum...)
+- Calcula hashes MD5 y SHA1
+- Compara binariamente dos ROMs e identifica diferencias
+
+#### Uso
+Coloca tus ROMs `.md` o `.bin` en el mismo directorio del script, con los siguientes nombres:
+```
+Minato no Traysia (Japan).md
+Traysia (USA).md
+Traysia (World) (Evercade).md
+Traysia (W).bin
+```
+---
 
 ### `srm_compare_util.py`
-Compara dos archivos `.srm` mostrando diferencias byte a byte por slot.
-- Identifica saves corruptos o estructuras alteradas.
-- Útil para detectar rutinas defectuosas de guardado.
+
+Utilidad para comparar estructuras `.srm` mostrando diferencias byte a byte, permitiendo detectar diferencias por slot de guardado.
+
+#### ¿Qué hace?
+- Carga dos archivos `.srm`. 
+- Divide cada archivo en bloques de 64 bytes (1 por slot)
+- Compara los primeros 51 bytes reales de cada bloque y muestra diferencias
+
+#### Uso
+```bash
+python srm_compare_util.py archivo1.srm archivo2.srm
+```
+
+Esta herramienta fue clave para identificar las diferencias en los datos guardados generados por la ROM de Shinyuden.
+
+---
+
+### `fix_rom_ips_generator.py`
+Pequeña utilidad para crear un parche IPS a partir de la ROM original y su versión modificada. Se usó para generar `../patches/Traysia_Shinyuden_ROM_nop_patch.ips`.
+
+---
 
 ### `fix_save_ips_generator.py`
-Genera el parche `.ips` para corregir archivos `.srm` afectados (puedes usar Lunar IPS en su lugar).
-- Aplica reemplazo de 13 bytes extra por `0xFF` en cada slot.
-- El parche resultante se incluye como [`../patches/FixSave_TraysiaShinyuden_RemoveExtraSaveBytes.ips`](../patches/FixSave_TraysiaShinyuden_RemoveExtraSaveBytes.ips).
+Genera el parche `.ips` para corregir archivos `.srm` afectados. Se usó para generar `../patches/Traysia_Shinyuden_SRM_nop_patch.ips`. 
