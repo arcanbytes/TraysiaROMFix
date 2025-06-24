@@ -2,24 +2,20 @@
 
 Este repositorio documenta y soluciona un bug crítico en la ROM de *Traysia* para Mega Drive distribuida por **Shinyuden**, y reúne herramientas de análisis utilizadas durante la investigación.
 
----
-
 ## 🐛 Bug de Guardado en Versión Shinyuden
 
-Se ha detectado que la ROM distribuida por Shinyuden introduce **13 bytes adicionales** en cada slot de guardado de SRAM. Estos bytes contienen el texto `"_data "` con valores intercalados `0xFF`, lo que produce una estructura de guardado mayor a la esperada por el juego original (51 bytes).
+Se ha detectado que la ROM distribuida por Shinyuden en reedición física del juego Traysia introduce **13 bytes adicionales** en cada slot de guardado de SRAM. Estos bytes contienen el texto `"_data "` con valores intercalados `0xFF`, lo que produce una estructura de guardado probablemente mayor a la esperada por el juego original (51 bytes).
 
 ### ❗ Reporte por TodoRPG
 El usuario [TodoRPG](https://youtu.be/5akNdXm_BiM) experimentó un bug al salvar partida avanzada: la partida quedó corrupta y aparecieron textos en japonés y gráficos corruptos. Creemos que:
 
 - El bug está relacionado con la escritura de datos inconsistentes al final del archivo .srm cuando se ejecuta en hardware real.
 
-- Este error no se reproduce fácilmente en emuladores porque estos limitan el acceso a 16 KB de SRAM.
-
 - El juego podría estar escribiendo metadatos no validados o datos mal inicializados en la zona extra de memoria, y luego accediendo a ellos sin control de integridad.
 
 ### 🔎 Análisis técnico
-- Comparando la versión USA original con la versión Shinyuden, los slots de guardado tienen **13 bytes extra** al final.
-- La ROM modifica las rutinas de guardado e introduce el texto `"_data "` (intercalado con `0xFF`) justo después del bloque útil de datos.
+- Comparando la versión USA original con la versión Shinyuden (ya que ambos compoarten el sistema de guardado), los slots de guardado de la versión de Shinyuden tienen **13 bytes extra** al final.
+- La ROM modifica las rutinas de guardado con respecto a la version USA e introduce el texto `"_data "` (intercalado con `0xFF`) justo después del bloque útil de datos. 
 - Esto desborda la estructura esperada por el motor del juego, que no fue diseñado para manejar datos extra.
 
 Ejemplo de los bytes extra:
