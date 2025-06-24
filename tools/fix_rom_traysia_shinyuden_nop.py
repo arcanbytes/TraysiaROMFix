@@ -1,4 +1,5 @@
 from pathlib import Path
+import argparse
 import hashlib
 
 # MD5 checksum of the original "Traysia (W).bin" ROM distributed by Shinyuden
@@ -42,4 +43,22 @@ def generate_traysia_save_fix_rom(input_rom_path: str, output_rom_path: str):
     Path(output_rom_path).write_bytes(rom)
 
 if __name__ == "__main__":
-    generate_traysia_save_fix_rom("roms/Traysia (W).bin", "roms/Traysia (W)_nop_patch.bin")
+    parser = argparse.ArgumentParser(
+        description="Parchea la ROM de Traysia Shinyuden remplazando el bloque '_data' por NOPs"
+    )
+    parser.add_argument(
+        "input_rom",
+        nargs="?",
+        default="roms/Traysia (W).bin",
+        help="Ruta a la ROM original"
+    )
+    parser.add_argument(
+        "-o",
+        "--output",
+        dest="output_rom",
+        default="roms/Traysia (W)_nop_patch.bin",
+        help="Ruta donde se escribirá la ROM parcheada"
+    )
+    args = parser.parse_args()
+
+    generate_traysia_save_fix_rom(args.input_rom, args.output_rom)

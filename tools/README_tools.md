@@ -9,6 +9,23 @@ Esta carpeta contiene scripts Python utilizados durante el análisis y correcci�
 ### `fix_rom_traysia_shinyuden_nop.py`
 Genera una versión corregida de `Traysia (W).bin` sustituyendo el bloque que añadía `_data` por instrucciones NOP (`0x4E71`). Equivale a aplicar el parche [`../patches/Traysia_Shinyuden_ROM_nop_patch.ips`](../patches/Traysia_Shinyuden_ROM_nop_patch.ips).
 
+#### Uso
+
+positional arguments:
+  input_rom             Ruta a la ROM original
+
+options:
+  -h, --help            show this help message and exit
+  -o, --output OUTPUT_ROM
+                        Ruta donde se escribirá la ROM parcheada
+
+```bash
+python tools/fix_rom_traysia_shinyuden_nop.py (usara las roms definidas por defecto de la carpeta roms)
+or
+python tools\fix_rom_traysia_shinyuden_nop.py -o "roms/Traysia (W)_nop_patch.bin" "roms/Traysia (W).bin" 
+```
+
+
 ---
 
 ### `fix_traysia_srm.py`
