@@ -26,26 +26,17 @@ FF 5F FF 64 FF 61 FF 74 FF 61 FF 20
 
 ### 🔬 Observaciones adicionales sobre SRAM
 
-El archivo `.srm` generado desde un cartucho físico (Mega Sg FPGA) incluye múltiples bloques con la cadena `"SRAM_save_data"` a partir del byte 0x4000. Esta firma no aparece en los saves generados por emuladores (ej. Kega Fusion), donde el `.srm` ocupa 16 KB.
+El archivo `.srm` generado desde un cartucho físico (Mega Sg FPGA) incluye múltiples bloques con la cadena `"SRAM_save_data"` a partir del byte 0x4000. Esta firma no aparece en los saves generados por emuladores (ej. Kega Fusion), donde el `.srm` ocupa 16 KB. Esto ocurre por que la PCB con 64 KB de SRAM simplemente rellena todo el espacio disponible, lo cual en realidad no deberia suponer un problema.
 
-Esto sugiere que la ROM de Shinyuden está escribiendo fuera del rango habitual de los 4 slots válidos (cada uno de 64 bytes), introduciendo metadatos no esperados en zonas de la SRAM. Esta diferencia puede ser clave para explicar la corrupción de partidas en fases avanzadas del juego, como han reportado algunos jugadores.
+Lo interesante es que al comparar los `.srm` de las distintas versiones comprobamos que no son iguales. Esta observación revela que cada slot de guardado de la version Shinyuden ocupa **64 bytes**, frente a los **51 bytes** de las versiones USA y japonesa. Por lo tanto esto podria ser una posible causa del problema; probablemente el motor termina leyendo y escribiendo mas datos de los previstos en los slots, corrompiendo las partidas.
 
-### 🧠 Uso de SRAM Expandida en Hardware Real
+| Versión  | Tamaño por slot | Nº de slots | Tamaño habitual del `.srm` |
+|---------|-----------------|------------|----------------------------|
+| Japón   | 51 bytes        | 4          | 32 KB                       |
+| USA     | 51 bytes        | 4          | 16 KB                       |
+| Shinyuden | 64 bytes      | 4          | 16 KB en emulador / 64 KB en hardware |
 
-Durante el análisis de la ROM Traysia (W).bin distribuida por Shinyuden, se detectó que el juego accede a regiones de SRAM superiores a 0x6000, lo cual excede el rango habitual de 16 KB (hasta 0x5FFF) utilizado por la mayoría de juegos de Mega Drive. Entre las direcciones detectadas están:
-```
-0x7FFF, 0x8000, 0xA000, 0xB000, 0xC000, 0xD000, 0xE000, 0xF000
-```
-
-Esto confirma el uso activo de 64 KB de SRAM cuando la ROM se ejecuta en hardware compatible (como ciertas PCBs clonadas disponibles en Aliexpress), entre ellas: 🔗 [Ejemplo de PCB utilizada por Shinyuden](https://es.aliexpress.com/item/1005007209715227.html)
-
-### 🧪 Diferencias entre Hardware Real y Emulación
-- En emuladores como Kega Fusion, el archivo .srm generado es de solo 16 KB, y el juego guarda correctamente.
-
-- En hardware real con cartucho físico, el .srm puede ocupar 64 KB, con datos adicionales en los últimos 48 KB.
-
-- Este comportamiento sugiere que el juego detecta si se ejecuta en hardware real, y expande la estructura de guardado automáticamente, quizás por una lógica heredada o modificada respecto a las versiones anteriores.
-
+Como se ve, el **tamaño total de 64 KB** en hardware se debe únicamente a que la placa detecta toda la SRAM disponible y la rellena por completo, algo normal en este tipo de memorias. El bug surge porque el juego usa estructuras de 64 bytes por slot, incompatibles con las rutinas heredadas que esperan 51 bytes. En emuladores como Kega Fusion, el archivo .srm generado es de solo 16 KB (como en la version USA).
 
 ### 🔍 Cómo se detectó el bug del guardado
 
@@ -166,43 +157,8 @@ Ninguna ROM especifica región (J, U, E), lo que sugiere que se compiló sin ese
 #### Conclusiones de la Comparación
 - La versión USA de Traysia no es solo una traducción: incluye ajustes profundos en el código.
 - La versión Evercade parte de la USA y realiza cambios menores, probablemente solo en la cabecera.
-- La versión en español de Shynyuden parte de la japonesa y expande la ROM a 2MB reales, reorganizando texto y posiblemente scripts.
+- La versión en español de Shynyuden parte de la japonesa y expande la ROM a 2MB reales, reorganizando texto y posiblemente scripts. Es más, **la versión de Shinyuden incluye los textos originales en inglés de la versión USA**, con lo cual podría ser posible habilitar el cambio de idioma si encontramos la manera.
 - El análisis de diferencias mediante parches .IPS y comparación binaria es una herramienta fundamental para la preservación y documentación de estas versiones.
-
-### Comportamiento del sistema de guardado en Traysia
-Durante el proceso de ingeniería inversa de Traysia, se identificaron diferencias relevantes en la gestión de SRAM entre versiones regionales del juego. Específicamente::
-- La versión japonesa utiliza un sistema de guardado que genera archivos .srm de 32 KB.
-
-- La versión americana modifica dicha lógica, generando archivos de 16 KB.
-
-- La versión publicada por Shinyuden, basada en la americana, produce archivos .srm de 64 KB cuando se ejecuta en hardware real (Archivo dumpleado), pero de 16 KB cuando se ejecuta en emulador.
-
-#### ¿Por qué ocurre esto? Modificación de rutina de guardado
-Comparando los archivos generados por ambas versiones, se detectó que la versión USA realiza una sobrescritura parcial del código de salvado original japonés, reduciendo el volumen de datos escritos a SRAM. Este cambio parece orientado a optimizar el uso de memoria, ya que el cartucho original americano probablemente incorporaba solo 16 KB de SRAM.
-
-No obstante, en la versión moderna de Shinyuden, esta ROM se ejecuta sobre una PCB flash con 64 KB de SRAM —como las comúnmente disponibles en el mercado actual—. Al ejecutar el juego en hardware real, se observa que:
-
-El sistema de guardado detecta dinámicamente la cantidad total de SRAM disponible.
-
-En función de esta detección, utiliza toda la SRAM expuesta por el cartucho, generando un .srm de 64 KB.
-
-Este comportamiento no se manifiesta en emuladores, limitando la escritura a 16 KB incluso si la lógica interna del juego está preparada para manejar más.
-
-#### Implicaciones prácticas y detección del problema
-Este diseño dinámico, combinado con la lógica de guardado heredada de la versión USA, parece ser el origen de los problemas de guardado reportados por usuarios (como el identificado por TodoRPG). Específicamente:
-
-- La ROM graba datos extendidos en SRAM cuando detecta espacio adicional disponible.
-
-- Estos datos adicionales no se esperan en las herramientas de emulación o en entornos donde se limiten a los 16 KB originales, lo que puede causar errores de lectura o incompatibilidad al transferir saves entre plataformas.
-
-#### Confirmación empírica
-El diagnóstico se confirmó a través de:
-- Comparaciones hexadecimales entre .srm generados en emuladores y en hardware real.
-- Desensamblado de la ROM USA/ESP, identificando patrones de escritura modificados respecto a la versión JAP.
-- Generación de archivos .srm desde múltiples entornos (Mega Sg, EverDrive, Kega Fusion).
-- Inspección de la lógica de detección de SRAM, que permite inferir que el juego utiliza un esquema de escritura condicional, en función del tamaño de la SRAM mapeada.
-
-Este comportamiento fue reproducido sistemáticamente en consolas FPGA y dispositivos flashcart, lo que refuerza la hipótesis de que el código de la versión Shinyuden contiene una rutina adaptativa que no se activa plenamente en emulación.
 
 ---
 
