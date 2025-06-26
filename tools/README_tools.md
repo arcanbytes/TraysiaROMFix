@@ -132,3 +132,23 @@ python tools/dump_text_blocks.py --start 0x100000 roms/Traysia\ \(W\).bin
 ```
 Puedes ajustar la longitud mínima de texto con `--min-len 30`, limitar los caracteres por línea con `--width` (0 para no truncar) y desplazar el inicio de búsqueda con `--start`. Con `--latin1` se muestran también caracteres extendidos para localizar texto con tildes. El script indica la longitud de cada bloque detectado para ayudar a delimitar secciones.
 
+---
+
+### `translate_spanish.py`
+
+Herramienta para extraer el texto en castellano a un fichero JSON y volver a insertarlo una vez traducido.
+
+Permite preparar una plantilla para traducir a otro idioma (por ejemplo, alemán) y reescribir el bloque de texto de la ROM con la traducción.
+
+#### Uso
+
+```bash
+# extraer las cadenas (por defecto el rango 0x100000-0x118000)
+python tools/translate_spanish.py export roms/Traysia\ \(W\).bin spanish.json
+
+# editar `spanish.json` con la traducción y volver a insertarla
+python tools/translate_spanish.py import roms/Traysia\ \(W\).bin spanish.json roms/Traysia\ \(W\)_de.bin
+```
+
+Los offsets y el rango pueden ajustarse con `--start` y `--end` en el modo `export`. El script mantiene la longitud original de cada cadena (incluyendo el byte nulo final), por lo que la traducción no debe superar ese límite.
+
