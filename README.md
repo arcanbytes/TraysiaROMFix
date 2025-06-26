@@ -158,6 +158,9 @@ Ninguna ROM especifica región (J, U, E), lo que sugiere que se compiló sin ese
 - La versión USA de Traysia no es solo una traducción: incluye ajustes profundos en el código.
 - La versión Evercade parte de la USA y realiza cambios menores, probablemente solo en la cabecera.
 - La versión en español de Shynyuden parte de la japonesa y expande la ROM a 2MB reales, reorganizando texto y posiblemente scripts. Es más, **la versión de Shinyuden incluye los textos originales en inglés de la versión USA**, con lo cual podría ser posible habilitar el cambio de idioma si encontramos la manera.
+ - A partir de esta observación se ha añadido un script experimental (`switch_to_english.py`) que redirige los punteros del texto en castellano al bloque de diálogos en inglés. El script detecta referencias en varios formatos, incluidos punteros de 4 bytes desplazados (`0x10000000`). Por fiabilidad es recomendable indicar los offsets manualmente (`--spanish-offset 0x100000 --english-offset 0x7B706`). También permite copiar el bloque inglés sobre el castellano con la opción `--overwrite-spanish`, saltar la modificación de punteros con `--skip-pointers` y limitar el rango de búsqueda con `--search-start` y `--search-end`.
+ - También se incluye `dump_text_blocks.py` para listar los segmentos de texto en la ROM y localizar scripts ocultos. Permite ajustar la longitud mínima (`--min-len`), la anchura de las líneas (`--width 0` para no truncar), especificar un offset inicial (`--start`) y detectar caracteres extendidos con `--latin1`. El resultado indica además la longitud de cada bloque hallado.
+- Para automatizar el proceso con todos los bloques, el script `batch_switch_to_english.py` lanza varias pasadas de `switch_to_english.py` usando los offsets descubiertos.
 - El análisis de diferencias mediante parches .IPS y comparación binaria es una herramienta fundamental para la preservación y documentación de estas versiones.
 
 ---
