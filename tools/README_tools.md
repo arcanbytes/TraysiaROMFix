@@ -140,6 +140,14 @@ Herramienta para extraer el texto en castellano a un fichero JSON y volver a ins
 
 Permite preparar una plantilla para traducir a otro idioma (por ejemplo, alemán) y reescribir el bloque de texto de la ROM con la traducción.
 
+El script interpreta los caracteres acentuados que la ROM almacena como
+secuencias `0x81 + letra` y los muestra en el JSON con tildes normales
+(á, é, í, ó, ú, ñ, etc.). Algunos bloques usan la letra en minúscula para
+indicar las mayúsculas acentuadas (por ejemplo `0x81i`/`0x81j` → `Á`,
+`0x81k` → `Í`).
+Al importar, la codificación inversa se aplica automáticamente, por lo que el
+traductor puede editar el texto sin preocuparse por estos códigos.
+
 #### Uso
 
 ```bash

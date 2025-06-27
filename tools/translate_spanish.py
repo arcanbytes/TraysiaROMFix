@@ -12,8 +12,74 @@ import json
 from pathlib import Path
 from typing import List, Dict
 
+# Mapeo de caracteres especiales usado por la ROM.
+# Cada letra acentuada se codifica como el byte 0x81 seguido de
+# una letra. El juego principal emplea mayúsculas, pero algunos
+# bloques alternativos utilizan códigos con la segunda letra en
+# minúsculas para representar ciertas mayúsculas acentuadas.
+_CANONICAL_MAP: dict[bytes, str] = {
+    b"\x81J": "¡",
+    b"\x81K": "¿",
+    b"\x81L": "á",
+    b"\x81M": "é",
+    b"\x81N": "í",
+    b"\x81O": "ó",
+    b"\x81P": "ú",
+    b"\x81Q": "ñ",
+    b"\x81R": "Á",
+    b"\x81S": "É",
+    b"\x81T": "Í",
+    b"\x81U": "Ó",
+    b"\x81V": "Ú",
+    b"\x81W": "Ñ",
+}
+
+# Códigos alternativos detectados en textos menos comunes.
+_ALT_MAP: dict[bytes, str] = {
+    b"\x81i": "Á",
+    b"\x81j": "Á",
+    b"\x81k": "Í",
+    b"\x81l": "Ó",
+    b"\x81m": "Ú",
+    b"\x81n": "Ñ",
+}
+
+SPANISH_CHAR_MAP: dict[bytes, str] = {**_CANONICAL_MAP, **_ALT_MAP}
+
+REVERSE_CHAR_MAP: dict[str, bytes] = {}
+for pair, ch in _CANONICAL_MAP.items():
+    REVERSE_CHAR_MAP[ch] = pair
+
+
+def decode_custom(chunk: bytes, encoding: str) -> str:
+    """Decodifica usando el mapa de caracteres especial."""
+    result = []
+    i = 0
+    while i < len(chunk):
+        if chunk[i] == 0x81 and i + 1 < len(chunk):
+            pair = chunk[i:i + 2]
+            char = SPANISH_CHAR_MAP.get(pair)
+            if char is not None:
+                result.append(char)
+                i += 2
+                continue
+        result.append(chunk[i:i + 1].decode(encoding, errors="replace"))
+        i += 1
+    return "".join(result)
+
+
+def encode_custom(text: str, encoding: str) -> bytes:
+    """Codifica el texto aplicando el mismo mapa en sentido inverso."""
+    out = bytearray()
+    for ch in text:
+        if ch in REVERSE_CHAR_MAP:
+            out.extend(REVERSE_CHAR_MAP[ch])
+        else:
+            out.extend(ch.encode(encoding, errors="replace"))
+    return bytes(out)
+
 DEFAULT_SPANISH_OFFSET = 0x100000
-DEFAULT_SPANISH_END = 0x118000  # aproximado; ajustable mediante argumento
+DEFAULT_SPANISH_END = 0x120000  # aproximado; ajustable mediante argumento
 
 
 def extract_strings(data: bytes, start: int, end: int, encoding: str) -> List[Dict[str, int | str]]:
@@ -25,10 +91,7 @@ def extract_strings(data: bytes, start: int, end: int, encoding: str) -> List[Di
             break
         if term > pos:
             chunk = data[pos:term]
-            try:
-                text = chunk.decode(encoding)
-            except UnicodeDecodeError:
-                text = chunk.decode(encoding, "replace")
+            text = decode_custom(chunk, encoding)
             strings.append({"offset": pos, "length": term - pos + 1, "text": text})
         pos = term + 1
     return strings
@@ -39,7 +102,7 @@ def write_strings(data: bytearray, entries: List[Dict[str, int | str]], encoding
         off = entry["offset"]
         length = entry["length"]
         text = entry["text"]
-        encoded = text.encode(encoding)
+        encoded = encode_custom(text, encoding)
         if len(encoded) >= length:
             raise ValueError(f"Texto demasiado largo en offset 0x{off:X}")
         encoded += b"\x00"
