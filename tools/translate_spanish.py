@@ -44,12 +44,28 @@ _ALT_MAP: dict[bytes, str] = {
     b"\x81n": "Ñ",
 }
 
-SPANISH_CHAR_MAP: dict[bytes, str] = {**_CANONICAL_MAP, **_ALT_MAP}
+# Caracteres alemanes comunes (extensión específica para DE)
+_DE_MAP: dict[bytes, str] = {
+    b"\x81a": "ä",
+    b"\x81b": "ö",
+    b"\x81c": "ü",
+    b"\x81d": "Ä",
+    b"\x81e": "Ö",
+    b"\x81f": "Ü",
+    b"\x81g": "ß",
+}
+
+SPANISH_CHAR_MAP: dict[bytes, str] = {**_CANONICAL_MAP, **_ALT_MAP, **_DE_MAP}
 
 REVERSE_CHAR_MAP: dict[str, bytes] = {}
-for pair, ch in _CANONICAL_MAP.items():
+for pair, ch in {**_CANONICAL_MAP, **_ALT_MAP, **_DE_MAP}.items():
     REVERSE_CHAR_MAP[ch] = pair
 
+def transliterate_de(text: str) -> str: # específico para Traysia DE)
+    return (text
+        .replace("ä", "ae").replace("ö", "oe").replace("ü", "ue")
+        .replace("Ä", "Ae").replace("Ö", "Oe").replace("Ü", "Ue")
+        .replace("ß", "ss"))
 
 def decode_custom(chunk: bytes, encoding: str) -> str:
     """Decodifica usando el mapa de caracteres especial."""
@@ -67,9 +83,11 @@ def decode_custom(chunk: bytes, encoding: str) -> str:
         i += 1
     return "".join(result)
 
+ENABLE_TRANSLIT = True  # cambia a False si no quieres transliteración DE
 
 def encode_custom(text: str, encoding: str) -> bytes:
-    """Codifica el texto aplicando el mismo mapa en sentido inverso."""
+    if ENABLE_TRANSLIT:
+        text = transliterate_de(text)
     out = bytearray()
     for ch in text:
         if ch in REVERSE_CHAR_MAP:
@@ -78,9 +96,39 @@ def encode_custom(text: str, encoding: str) -> bytes:
             out.extend(ch.encode(encoding, errors="replace"))
     return bytes(out)
 
-DEFAULT_SPANISH_OFFSET = 0x100000
-DEFAULT_SPANISH_END = 0x120000  # aproximado; ajustable mediante argumento
+#ALL (strings acabados en b"\x00") ← Solo para exploración!
+#DEFAULT_SPANISH_OFFSET = 0x000000
+#DEFAULT_SPANISH_END = 0x200000  # aproximado; ajustable mediante argumento
 
+#BLOQUE 1 NARRATIVA y DIALOGOS (strings acabados en b"\x00")
+#DEFAULT_SPANISH_OFFSET = 0x100000
+#DEFAULT_SPANISH_END = 0x1181A5  # aproximado; ajustable mediante argumento
+
+#BLOQUE 2 ENEMIGOS 
+#DEFAULT_SPANISH_OFFSET = 0x1FDB00
+#DEFAULT_SPANISH_END = 0x1FFF00
+
+#BLOQUE 3 NARRATIVA EXTRA 
+#DEFAULT_SPANISH_OFFSET = 0x00C2C4
+#DEFAULT_SPANISH_END = 0xC55B
+
+#BLOQUE 4 MENU PARTIDA
+#DEFAULT_SPANISH_OFFSET = 0x1C119
+#DEFAULT_SPANISH_END = 0x1C232
+
+#BLOQUE 5 ITEMS
+#DEFAULT_SPANISH_OFFSET = 0x12E0D
+#DEFAULT_SPANISH_END = 0x133FD
+#---------------------------------------
+# Bloques de texto conocidos de Traysia
+BLOCKS = [
+    (0x100000, 0x1181A5),  # BLOQUE 1: Narrativa principal
+    (0x1FDB00, 0x1FFF00),  # BLOQUE 2: Enemigos
+    (0x00C2C4, 0x00C55B),  # BLOQUE 3: Narrativa extra
+    (0x1C119,  0x1C232),   # BLOQUE 4: Menú de partida
+    (0x12E0D,  0x133FD),   # BLOQUE 5: Items
+    (0x1436C,  0x14787),   # BLOQUE 5: Tiendas
+]
 
 def extract_strings(data: bytes, start: int, end: int, encoding: str) -> List[Dict[str, int | str]]:
     strings = []
@@ -92,7 +140,13 @@ def extract_strings(data: bytes, start: int, end: int, encoding: str) -> List[Di
         if term > pos:
             chunk = data[pos:term]
             text = decode_custom(chunk, encoding)
-            strings.append({"offset": pos, "length": term - pos + 1, "text": text})
+            strings.append({
+                "offset": pos,
+                "offset_hex": f"0x{pos:X}",  # ← mismo valor en hexadecimal
+                "length": term - pos + 1,
+                "text": text,
+                "text_source": text  # ← para referencia
+            })
         pos = term + 1
     return strings
 
@@ -109,13 +163,14 @@ def write_strings(data: bytearray, entries: List[Dict[str, int | str]], encoding
         data[off:off + length] = encoded.ljust(length, b"\x00")
 
 
-def export_mode(args: argparse.Namespace) -> None:
-    data = Path(args.rom).read_bytes()
-    end = args.end if args.end else len(data)
-    strings = extract_strings(data, args.start, end, args.encoding)
-    Path(args.output).write_text(json.dumps(strings, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"Extraidas {len(strings)} cadenas")
-
+def export_mode(rom_path: Path, json_path: Path, encoding: str):
+    data = rom_path.read_bytes()
+    strings = []
+    for start, end in BLOCKS:
+        strings.extend(extract_strings(data, start, end, encoding))
+    strings.sort(key=lambda s: s["offset"])
+    json_path.write_text(json.dumps(strings, ensure_ascii=False, indent=2), "utf-8")
+    print(f"✔ Exportadas {len(strings)} cadenas → {json_path}")
 
 def import_mode(args: argparse.Namespace) -> None:
     data = bytearray(Path(args.rom).read_bytes())
@@ -132,10 +187,7 @@ def main() -> None:
     p_exp = sub.add_parser("export", help="Extrae cadenas a JSON")
     p_exp.add_argument("rom", help="Ruta a la ROM original")
     p_exp.add_argument("output", help="Archivo JSON de salida")
-    p_exp.add_argument("--start", type=lambda x: int(x, 0), default=DEFAULT_SPANISH_OFFSET, help="Offset inicial")
-    p_exp.add_argument("--end", type=lambda x: int(x, 0), default=DEFAULT_SPANISH_END, help="Offset final")
-    p_exp.add_argument("--encoding", default="latin-1", help="Codificacion del texto")
-
+    p_exp.add_argument("--encoding", default="latin-1", help="Codificacion del texto (por defecto: latin-1). Se usan bloques predefinidos.")
     p_imp = sub.add_parser("import", help="Inserta traducciones desde JSON")
     p_imp.add_argument("rom", help="Ruta a la ROM original")
     p_imp.add_argument("json", help="Archivo JSON con traduccion")
@@ -144,7 +196,7 @@ def main() -> None:
 
     args = parser.parse_args()
     if args.cmd == "export":
-        export_mode(args)
+        export_mode(Path(args.rom), Path(args.output), args.encoding)
     else:
         import_mode(args)
 

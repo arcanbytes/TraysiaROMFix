@@ -29,7 +29,7 @@ python tools\fix_rom_traysia_shinyuden_nop.py -o "roms/Traysia (W)_nop_patch.bin
 ---
 
 ### `fix_traysia_srm.py`
-Corrige directamente un archivo `.srm`. Equivale a aplicar el parche [../patches/Traysia_Shinyuden_SRM_nop_patch.ips](../patches/Traysia_Shinyuden_SRM_nop_patch.ips).
+Corrige directamente un archivo `.srm`. Equivale a aplicar el parche [../patches/Traysia_Shinyuden_SRM_nop_patch.ips](../patches/Traysia_Shinyuden_SRM_nop_patch.ips). No probado.
 
 ---
 
@@ -100,37 +100,38 @@ python tools/switch_to_english.py --overwrite-spanish "roms/Traysia (W).bin"
 python tools/switch_to_english.py --skip-pointers --overwrite-spanish "roms/Traysia (W).bin"
 ```
 
-Redirige todas las referencias al bloque de diálogos en castellano (por defecto `0x100000`) al comienzo del texto en inglés (`0x07B706`). Si se usa `--overwrite-spanish`, copia el texto inglés sobre el castellano usando el rango por defecto hasta `0x0937C4`. Con `--search-start` y `--search-end` puedes limitar el rango de búsqueda de punteros. El script contabiliza por separado cada formato sustituido para facilitar la verificación.
+Redirige todas las referencias al bloque de diálogos en castellano (por defecto `0x100000`) al comienzo del texto en inglés (`0x07B706`). Si se usa `--overwrite-spanish`, copia el texto inglés sobre el castellano usando el rango por defecto hasta `0x0937C4`. Con `--search-start` y `--search-end` puedes limitar el rango de búsqueda de punteros. El script contabiliza por separado cada formato sustituido para facilitar la verificación. Estado actual: Work in Progress.
 
+---
+
+### `dump_text_blocks.py`
+
+Explora una ROM y muestra todos los bloques de texto ASCII detectados con su offset. Permite ajustar la longitud mínima (`--min-len`), la anchura de las líneas (`--width 0` para no truncar), especificar un offset inicial (`--start`) y detectar caracteres extendidos con `--latin1`. El resultado indica además la longitud de cada bloque hallado. Útil para localizar scripts ocultos o segmentados.
+
+#### Uso
+```bash
+python tools/dump_text_blocks.py "roms/Traysia (W).bin" > .temp/text_blocks.txt
+# mostrar bloques completos
+python tools/dump_text_blocks.py --width 0 "roms/Traysia (W).bin"n
+# detectar caracteres acentuados (Latin-1)
+python tools/dump_text_blocks.py --latin1 "roms/Traysia (W).bin"
+# empezar en un offset concreto y mostrar la longitud de cada bloque
+python tools/dump_text_blocks.py --start 0x100000 "roms/Traysia (W).bin"
+#
+python tools/dump_text_blocks.py --width 0 --latin1 --start 0x000000 "roms/Traysia (W).bin" > .temp/text_blocks.txt
+```
 ---
 
 ### `batch_switch_to_english.py`
 
 Pequeño lanzador que aplica `switch_to_english.py` sobre varios bloques de texto.
-Los offsets se calcularon con `dump_text_blocks.py` y permiten obtener una ROM en inglés en una sola pasada.
+Los offsets se calculan/deduce con `dump_text_blocks.py` y permiten obtener una ROM en inglés en una sola pasada. Estado actual: Work in Progress.
 
 ```bash
 python tools/batch_switch_to_english.py
 # o copiando el texto en lugar de solo redirigir punteros
 python tools/batch_switch_to_english.py --overwrite-spanish
 ```
-
-### `dump_text_blocks.py`
-
-Explora una ROM y muestra todos los bloques de texto ASCII detectados con su offset.
-Útil para localizar scripts ocultos o segmentados.
-
-#### Uso
-```bash
-python tools/dump_text_blocks.py roms/Traysia\ \(W\).bin > text_blocks.txt
-# mostrar bloques completos
-python tools/dump_text_blocks.py --width 0 roms/Traysia\ \(W\).bin
-# detectar caracteres acentuados (Latin-1)
-python tools/dump_text_blocks.py --latin1 roms/Traysia\ \(W\).bin
-# empezar en un offset concreto y mostrar la longitud de cada bloque
-python tools/dump_text_blocks.py --start 0x100000 roms/Traysia\ \(W\).bin
-```
-Puedes ajustar la longitud mínima de texto con `--min-len 30`, limitar los caracteres por línea con `--width` (0 para no truncar) y desplazar el inicio de búsqueda con `--start`. Con `--latin1` se muestran también caracteres extendidos para localizar texto con tildes. El script indica la longitud de cada bloque detectado para ayudar a delimitar secciones.
 
 ---
 
@@ -152,10 +153,10 @@ traductor puede editar el texto sin preocuparse por estos códigos.
 
 ```bash
 # extraer las cadenas (por defecto el rango 0x100000-0x118000)
-python tools/translate_spanish.py export roms/Traysia\ \(W\).bin spanish.json
+python tools/translate_spanish.py export "roms/Traysia (W).bin" spanish.json
 
-# editar `spanish.json` con la traducción y volver a insertarla
-python tools/translate_spanish.py import roms/Traysia\ \(W\).bin spanish.json roms/Traysia\ \(W\)_de.bin
+# editar `spanish.json` para obtener german.json con la traducción y volver a insertarla
+python tools/translate_spanish.py import "roms/Traysia (W).bin" german.json "roms/Traysia (DE).bin"
 ```
 
 Los offsets y el rango pueden ajustarse con `--start` y `--end` en el modo `export`. El script mantiene la longitud original de cada cadena (incluyendo el byte nulo final), por lo que la traducción no debe superar ese límite.
