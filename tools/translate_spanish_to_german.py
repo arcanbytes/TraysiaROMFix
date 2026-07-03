@@ -27,11 +27,20 @@ Uso:
 """
 
 from __future__ import annotations
-import argparse, json, random, re, time
+import argparse, json, random, re, sys, time
 from collections import deque
 from pathlib import Path
 from typing import Optional
 from translate_spanish import encode_custom, transliterate_de
+
+# Evita errores de codificacion en consolas que no son UTF-8 (p.ej. cp1252)
+try:
+    sys.stdout.reconfigure(errors="replace")
+except AttributeError:
+    pass
+
+# Idiomas de destino soportados (--target)
+DEEPL_TARGETS = {"de": "DE", "en": "EN-US"}
 
 # ──────────────────────────  Motores de traducción  ──────────────────────────
 class BaseTranslator:
@@ -39,8 +48,9 @@ class BaseTranslator:
 
 # Google (web‑scraper)
 class GoogleTransTranslator(BaseTranslator):
-    def __init__(self):
+    def __init__(self, target: str):
         from googletrans import Translator
+        self.target = target
         self.t = Translator(service_urls=[
             "translate.googleapis.com",
             "translate.google.com",
@@ -51,43 +61,41 @@ class GoogleTransTranslator(BaseTranslator):
         if not hasattr(self.t, "raise_Exception"):
             self.t.raise_Exception = getattr(self.t, "raise_exception", True)
     def translate(self, text: str) -> str:
-        #return self.t.translate(text, dest="de").text # ← Para traducir al aleman
-        return self.t.translate(text, dest="en").text  # ← ← Para traducir al ingles
+        return self.t.translate(text, dest=self.target).text
 
 # DeepL (requiere API key)
 class DeeplTranslator(BaseTranslator):
-    def __init__(self, api_key: str):
+    def __init__(self, api_key: str, target: str):
         import deepl
+        self.target = DEEPL_TARGETS[target]
         self.t = deepl.Translator(api_key)
     def translate(self, text: str) -> str:
-        #return self.t.translate_text(text, target_lang="DE").text  # ← Para traducir al aleman
-        return self.t.translate_text(text, target_lang="EN").text  # ← Para traducir al ingles
+        return self.t.translate_text(text, target_lang=self.target).text
 
 # Argos Translate (offline)
 class ArgosTranslator(BaseTranslator):
-    def __init__(self):
+    def __init__(self, target: str):
         import argostranslate.translate as at
         src = tgt = None
         for lang in at.get_installed_languages():
             if lang.code == "es": src = lang
-            #if lang.code == "de": tgt = lang  # ← Para traducir al aleman
-            if lang.code == "en": tgt = lang  # ← Para traducir al ingles
+            if lang.code == target: tgt = lang
         if not (src and tgt):
-            raise RuntimeError("❌ Falta el modelo ES→DE en Argos Translate.")
+            raise RuntimeError(f"❌ Falta el modelo ES→{target.upper()} en Argos Translate.")
         self.t = src.get_translation(tgt)
     def translate(self, text: str) -> str:
         return self.t.translate(text)
 
-def get_translator(provider: str, api_key: Optional[str]) -> BaseTranslator:
+def get_translator(provider: str, api_key: Optional[str], target: str) -> BaseTranslator:
     provider = provider.lower()
     if provider == "googletrans":
-        return GoogleTransTranslator()
+        return GoogleTransTranslator(target)
     if provider == "deepl":
         if not api_key:
             raise SystemExit("--api-key es obligatorio para DeepL")
-        return DeeplTranslator(api_key)
+        return DeeplTranslator(api_key, target)
     if provider == "argos":
-        return ArgosTranslator()
+        return ArgosTranslator(target)
     raise SystemExit(f"Proveedor desconocido: {provider}")
 
 # ────────────────────────────  Helpers de formato (Genéricos y Traysia MD) ───────────────────────────
@@ -173,11 +181,13 @@ def truncate(text: str, limit: int, encoding="latin-1") -> str:
             break
     return allowed.rstrip() + truncator
 
-def build_block(formatted: str, limit: int) -> dict:
-    translit = transliterate_de(formatted) #Traysia DE. Comentar si la rom soporta representación de caracteres especiales alemanes
-    if len(encode_custom(translit, "latin-1")) + 1 <= limit:
-        return {"text": translit}
-    return {"text": truncate(translit, limit), "review": True}
+def build_block(formatted: str, limit: int, translit: bool = True) -> dict:
+    # La transliteración (ä→ae...) solo tiene sentido para alemán; la fuente
+    # de Traysia no incluye esos glifos. Para otros idiomas se omite.
+    text = transliterate_de(formatted) if translit else formatted
+    if len(encode_custom(text, "latin-1")) + 1 <= limit:
+        return {"text": text}
+    return {"text": truncate(text, limit), "review": True}
 
 # ───────────────────────  Cargar o iniciar german.json  ──────────────────────
 def load_or_init_de(dst: Path, es_data: list[dict], resume: bool):
@@ -232,14 +242,23 @@ def safe_translate(tr: BaseTranslator, text: str, retries: int, delay: float) ->
     Lanza:
         La última excepción si todos los reintentos fallan
     """    
-    import httpx, httpcore, json as _json
-    timeout_exc = []
-    for n in ("ReadTimeout", "TimeoutException"):
-        if hasattr(httpx, n):
-            timeout_exc.append(getattr(httpx, n))
-    if hasattr(httpcore, "ReadTimeout"):
-        timeout_exc.append(httpcore.ReadTimeout)
-    timeout_exc.append(_json.JSONDecodeError)   # HTML/CAPTCHA en vez de JSON
+    import json as _json
+    timeout_exc = [_json.JSONDecodeError]   # HTML/CAPTCHA en vez de JSON
+    # httpx/httpcore solo existen si se instalo googletrans; con otros
+    # proveedores (deepl, argos) no deben ser un requisito.
+    try:
+        import httpx
+        for n in ("ReadTimeout", "TimeoutException"):
+            if hasattr(httpx, n):
+                timeout_exc.append(getattr(httpx, n))
+    except ImportError:
+        pass
+    try:
+        import httpcore
+        if hasattr(httpcore, "ReadTimeout"):
+            timeout_exc.append(httpcore.ReadTimeout)
+    except ImportError:
+        pass
 
     for attempt in range(retries + 1):
         try:
@@ -258,7 +277,8 @@ def safe_translate(tr: BaseTranslator, text: str, retries: int, delay: float) ->
 from tqdm import tqdm
 
 def translate_file(src: Path, dst: Path, tr: BaseTranslator,
-                   retries: int, resume: bool, save_every: int):
+                   retries: int, resume: bool, save_every: int,
+                   translit: bool = True):
     es_items = json.loads(src.read_text("utf-8"))
     de_items = load_or_init_de(dst, es_items, resume)
 
@@ -283,7 +303,7 @@ def translate_file(src: Path, dst: Path, tr: BaseTranslator,
 
             de_fmt = apply_formatting(es_text, de_raw)
             limit  = es_it["length"]
-            de_it.update(text_translator=de_raw, **build_block(de_fmt, limit))
+            de_it.update(text_translator=de_raw, **build_block(de_fmt, limit, translit))
             de_it["length"] = limit  # mantener valor original
 
             # ─ auto‑ajuste de la pausa ─
@@ -312,7 +332,7 @@ def translate_file(src: Path, dst: Path, tr: BaseTranslator,
     print(f"✔ Traducción completa → {dst}")
 
 # ─────────────────────────────  Re‑formateo  ────────────────────────────────
-def format_file(src: Path, de_in: Path, de_out: Path):
+def format_file(src: Path, de_in: Path, de_out: Path, translit: bool = True):
     es = json.loads(src.read_text("utf-8"))
     de = json.loads(de_in.read_text("utf-8"))
     if len(es) != len(de):
@@ -330,7 +350,7 @@ def format_file(src: Path, de_in: Path, de_out: Path):
         candidate = de_it["text_translator"]
         de_fmt = apply_formatting(es_it["text"], candidate)
         limit = es_it["length"]
-        de_it.update(**build_block(de_fmt, limit))
+        de_it.update(**build_block(de_fmt, limit, translit))
         de_it["length"] = limit  # asegúrate de que se mantenga sincronizado
 
     de_out.write_text(json.dumps(de, ensure_ascii=False, indent=2), "utf-8")
@@ -362,12 +382,14 @@ def check_format(dst: Path):
 
 # ───────────────────────────────  CLI  ───────────────────────────────────────
 def cli():
-    parser = argparse.ArgumentParser(description="[ES]→[DE] JSON translator")
+    parser = argparse.ArgumentParser(description="Traductor de JSON [ES]→[DE/EN]")
     parser.add_argument("src", help="spanish.json original")
-    parser.add_argument("dst", help="german.json destino (lectura/escritura)")
+    parser.add_argument("dst", help="JSON destino (lectura/escritura)")
     parser.add_argument("--mode", choices=["translate", "format", "check"], default="translate")
     parser.add_argument("--provider", choices=["googletrans", "deepl", "argos"],
                         default="googletrans")
+    parser.add_argument("--target", choices=["de", "en"], default="de",
+                        help="idioma de destino (por defecto: de)")
     parser.add_argument("--api-key", help="Clave API DeepL", default=None)
     parser.add_argument("--max-retries", type=int, default=5, help="reintentos por frase")
     parser.add_argument("--resume", action="store_true", help="reanudar archivo existente")
@@ -376,20 +398,22 @@ def cli():
 
     args = parser.parse_args()
     src, dst = Path(args.src), Path(args.dst)
+    translit = args.target == "de"
 
     if args.mode == "format":
-        format_file(src, dst, dst)
+        format_file(src, dst, dst, translit=translit)
         return
     if args.mode == "check":
         check_format(dst)
         return
 
-    translator = get_translator(args.provider, args.api_key)
+    translator = get_translator(args.provider, args.api_key, args.target)
     try:
         translate_file(src, dst, translator,
                       retries=args.max_retries,
                       resume=args.resume,
-                      save_every=args.save_every)
+                      save_every=args.save_every,
+                      translit=translit)
     except KeyboardInterrupt:
         print("\n⏹ Ejecución cancelada por el usuario. ¡Hasta luego!")
         return

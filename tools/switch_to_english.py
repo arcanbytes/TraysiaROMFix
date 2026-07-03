@@ -7,11 +7,13 @@ DEFAULT_SPANISH_OFFSET = 0x100000  # address of Spanish script in Shinyuden ROM
 DEFAULT_ENGLISH_OFFSET = 0x07B706  # start of English script in Shinyuden ROM
 DEFAULT_ENGLISH_END = 0x0937C4     # end of English text block in Shinyuden ROM
 
-SPANISH_TEXT_OFFSET = DEFAULT_SPANISH_OFFSET
-ENGLISH_TEXT_OFFSET = DEFAULT_ENGLISH_OFFSET
-
 # Opcodes "LEA addr, An" para A0-A7
 LEA_OPCODES = [bytes([0x41 + n * 2, 0xF9]) for n in range(8)]
+
+# Numero de reemplazos a partir del cual un patron poco distintivo
+# (casi todo ceros) se considera sospechoso de falsos positivos.
+LOW_ENTROPY_WARN_THRESHOLD = 100
+
 
 def detect_offsets(data: bytes) -> tuple[int, int]:
     """Attempt to locate the Spanish and English text blocks automatically."""
@@ -20,6 +22,7 @@ def detect_offsets(data: bytes) -> tuple[int, int]:
     english_offset = data.find(english_mark)
     spanish_offset = data.find(spanish_mark)
     return english_offset, spanish_offset
+
 
 def switch_to_english(rom_path: str, output_path: str,
                       english_offset: int | None = None,
@@ -47,40 +50,30 @@ def switch_to_english(rom_path: str, output_path: str,
         if auto_span != -1 and auto_span != spanish_offset:
             print(f"Detected Spanish text at 0x{auto_span:X}; using default 0x{spanish_offset:X}")
 
-    global SPANISH_TEXT_OFFSET, ENGLISH_TEXT_OFFSET
-    SPANISH_TEXT_OFFSET = spanish_offset
-    ENGLISH_TEXT_OFFSET = english_offset
-
     PATTERNS = {
         'be3': (
-            SPANISH_TEXT_OFFSET.to_bytes(3, 'big'),
-            ENGLISH_TEXT_OFFSET.to_bytes(3, 'big'),
+            spanish_offset.to_bytes(3, 'big'),
+            english_offset.to_bytes(3, 'big'),
         ),
         'le3': (
-            SPANISH_TEXT_OFFSET.to_bytes(3, 'little'),
-            ENGLISH_TEXT_OFFSET.to_bytes(3, 'little'),
+            spanish_offset.to_bytes(3, 'little'),
+            english_offset.to_bytes(3, 'little'),
         ),
         'be4': (
-            SPANISH_TEXT_OFFSET.to_bytes(4, 'big'),
-            ENGLISH_TEXT_OFFSET.to_bytes(4, 'big'),
+            spanish_offset.to_bytes(4, 'big'),
+            english_offset.to_bytes(4, 'big'),
         ),
         'le4': (
-            SPANISH_TEXT_OFFSET.to_bytes(4, 'little'),
-            ENGLISH_TEXT_OFFSET.to_bytes(4, 'little'),
+            spanish_offset.to_bytes(4, 'little'),
+            english_offset.to_bytes(4, 'little'),
         ),
         'be4shift': (
-            (SPANISH_TEXT_OFFSET << 8).to_bytes(4, 'big'),
-            (ENGLISH_TEXT_OFFSET << 8).to_bytes(4, 'big'),
+            (spanish_offset << 8).to_bytes(4, 'big'),
+            (english_offset << 8).to_bytes(4, 'big'),
         ),
         'le4shift': (
-            (SPANISH_TEXT_OFFSET << 8).to_bytes(4, 'little'),
-            (ENGLISH_TEXT_OFFSET << 8).to_bytes(4, 'little'),
-        ),
-        'hilo': (
-            (SPANISH_TEXT_OFFSET >> 16).to_bytes(2, 'big') +
-            (SPANISH_TEXT_OFFSET & 0xFFFF).to_bytes(2, 'big'),
-            (ENGLISH_TEXT_OFFSET >> 16).to_bytes(2, 'big') +
-            (ENGLISH_TEXT_OFFSET & 0xFFFF).to_bytes(2, 'big'),
+            (spanish_offset << 8).to_bytes(4, 'little'),
+            (english_offset << 8).to_bytes(4, 'little'),
         ),
     }
 
@@ -96,19 +89,24 @@ def switch_to_english(rom_path: str, output_path: str,
         return count
 
     if not skip_pointers:
+        # Instrucciones LEA primero: producen el mismo reemplazo en bytes que
+        # el patron generico 'be4', pero al ejecutarlas antes el recuento se
+        # atribuye correctamente a 'leaN' en lugar de mezclarse con 'be4'.
+        lea_old = spanish_offset.to_bytes(4, 'big')
+        lea_new = english_offset.to_bytes(4, 'big')
+        for idx, op in enumerate(LEA_OPCODES):
+            counts[f'lea{idx}'] = replace_within(data, op + lea_old, op + lea_new)
+
         for name, (old, new) in PATTERNS.items():
             occurrences = replace_within(data, old, new)
             counts[name] = occurrences
-
-        # Buscar instrucciones LEA que cargan la direccion del texto en castellano
-        lea_old = SPANISH_TEXT_OFFSET.to_bytes(4, 'big')
-        lea_new = ENGLISH_TEXT_OFFSET.to_bytes(4, 'big')
-        for idx, op in enumerate(LEA_OPCODES):
-            search = op + lea_old
-            replace = op + lea_new
-            key = f'lea{idx}'
-            occ = replace_within(data, search, replace)
-            counts[key] = occ
+            distinctive = sum(1 for b in old if b != 0)
+            if occurrences > LOW_ENTROPY_WARN_THRESHOLD and distinctive <= 1:
+                print(
+                    f"Warning: el patron '{name}' ({old.hex(' ')}) es poco distintivo y ha "
+                    f"reemplazado {occurrences} coincidencias; es probable que muchas sean "
+                    "falsos positivos. Limita el rango con --search-start/--search-end."
+                )
     else:
         counts['pointers_skipped'] = 0
 
@@ -116,21 +114,23 @@ def switch_to_english(rom_path: str, output_path: str,
         if length is not None:
             text_length = length
         else:
-            text_length = DEFAULT_ENGLISH_END - ENGLISH_TEXT_OFFSET
-        end = ENGLISH_TEXT_OFFSET + text_length
-        if end > len(data):
-            end = len(data)
-            text_length = end - ENGLISH_TEXT_OFFSET
-        block = data[ENGLISH_TEXT_OFFSET:end]
-        data[SPANISH_TEXT_OFFSET:SPANISH_TEXT_OFFSET + text_length] = block
-        counts['overwrite'] = text_length
+            text_length = DEFAULT_ENGLISH_END - english_offset
+        # No leer mas alla del final de la ROM...
+        end = min(english_offset + text_length, len(data))
+        block = data[english_offset:end]
+        # ...ni escribir mas alla (la asignacion de slice de un bytearray
+        # agrandaria el archivo silenciosamente).
+        block = block[:max(len(data) - spanish_offset, 0)]
+        data[spanish_offset:spanish_offset + len(block)] = block
+        counts['overwrite'] = len(block)
     elif sum(counts.values()) <= 1:
         print("Warning: se encontraron muy pocos punteros. Prueba a usar --overwrite-spanish o revisa los offsets.")
 
     Path(output_path).write_bytes(bytes(data))
     total = sum(counts.values())
-    detail = ", ".join(f"{k}:{v}" for k, v in counts.items())
-    print(f"Replaced {total} pointers ({detail})")
+    detail = ", ".join(f"{k}:{v}" for k, v in counts.items() if v)
+    print(f"Replaced {total} pointers ({detail or 'sin coincidencias'})")
+
 
 def main() -> None:
     """Parse CLI arguments and apply the language switch."""

@@ -38,11 +38,11 @@
         PowerShell
 
         ```
-        & D:/Projects/Development/TraysiaROMFix/.venv/Scripts/python.exe d:/Projects/Development/TraysiaROMFix/tools/translate_spanish_to_german.py translations/spanish.json translations/english.json --provider googletrans
+        & D:/Projects/Development/TraysiaROMFix/.venv/Scripts/python.exe d:/Projects/Development/TraysiaROMFix/tools/translate_spanish_to_german.py translations/spanish.json translations/english.json --target en --provider googletrans
 
         ```
 
-    -   **Resultado:** Se generará `translations/english.json` (o `german.json` si se especifica otro idioma de destino) con las traducciones automáticas.
+    -   **Resultado:** Se generará `translations/english.json` con las traducciones automáticas. El idioma de destino se elige con `--target` (`de` para alemán —el valor por defecto—, `en` para inglés).
 
 3.  **Formatear las Cadenas Traducidas:**
 
@@ -53,7 +53,7 @@
         PowerShell
 
         ```
-        & D:/Projects/Development/TraysiaROMFix/.venv/Scripts/python.exe d:/Projects/Development/TraysiaROMFix/tools/translate_spanish_to_german.py translations/spanish.json translations/english.json --mode format
+        & D:/Projects/Development/TraysiaROMFix/.venv/Scripts/python.exe d:/Projects/Development/TraysiaROMFix/tools/translate_spanish_to_german.py translations/spanish.json translations/english.json --mode format --target en
 
         ```
 

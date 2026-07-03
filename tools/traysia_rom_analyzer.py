@@ -2,19 +2,39 @@
 
 import hashlib
 import os
+import sys
+
+# Evita errores de codificacion en consolas que no son UTF-8 (p.ej. cp1252)
+try:
+    sys.stdout.reconfigure(errors="replace")
+except AttributeError:
+    pass
 
 def parse_md_header(rom_path):
+    """Lee la cabecera estandar de Mega Drive (0x100-0x1FF)."""
     with open(rom_path, "rb") as f:
         f.seek(0x100)
-        header = f.read(0x50)
+        header = f.read(0x100)
 
-    return {
-        "ROM Name (domestic)": header[0x00:0x10].decode("ascii", errors="replace").strip(),
-        "ROM Name (overseas)": header[0x10:0x20].decode("ascii", errors="replace").strip(),
-        "Product Type": header[0x20:0x22].hex().upper(),
-        "Checksum": f"0x{int.from_bytes(header[0x18:0x1A], 'big'):04X}",
-        "Region": header[0x4F:0x50].decode("ascii", errors="replace")
+    info = {
+        "Console": header[0x00:0x10].decode("ascii", errors="replace").strip(),
+        "Copyright": header[0x10:0x20].decode("ascii", errors="replace").strip(),
+        "ROM Name (domestic)": header[0x20:0x50].decode("ascii", errors="replace").strip(),
+        "ROM Name (overseas)": header[0x50:0x80].decode("ascii", errors="replace").strip(),
+        "Serial": header[0x80:0x8E].decode("ascii", errors="replace").strip(),
+        "Checksum": f"0x{int.from_bytes(header[0x8E:0x90], 'big'):04X}",
+        "Region": header[0xF0:0xF3].decode("ascii", errors="replace").strip(),
     }
+
+    # Declaracion de SRAM ("RA" en 0x1B0): rango de direcciones de guardado
+    if header[0xB0:0xB2] == b"RA":
+        sram_start = int.from_bytes(header[0xB4:0xB8], "big")
+        sram_end = int.from_bytes(header[0xB8:0xBC], "big")
+        info["SRAM"] = f"0x{sram_start:06X}-0x{sram_end:06X}"
+    else:
+        info["SRAM"] = "no declarada"
+
+    return info
 
 def calculate_hashes(filepath):
     with open(filepath, "rb") as f:
@@ -71,6 +91,9 @@ if __name__ == "__main__":
 
     print("--- ROM Summaries ---")
     for name, path in roms.items():
+        if not os.path.exists(path):
+            print(f"\n{name}: (ROM no encontrada: {path})")
+            continue
         info = summarize_rom(path)
         print(f"\n{name}:")
         for k, v in info.items():
@@ -84,6 +107,9 @@ if __name__ == "__main__":
     ]
 
     for a, b in comparisons:
+        if not (os.path.exists(roms[a]) and os.path.exists(roms[b])):
+            print(f"\nComparando {a} vs {b}: (falta alguna ROM, se omite)")
+            continue
         result = compare_roms(roms[a], roms[b])
         print(f"\nComparando {a} vs {b}:")
         for k, v in result.items():

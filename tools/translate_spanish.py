@@ -9,8 +9,15 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import List, Dict
+
+# Evita errores de codificacion en consolas que no son UTF-8 (p.ej. cp1252)
+try:
+    sys.stdout.reconfigure(errors="replace")
+except AttributeError:
+    pass
 
 # Mapeo de caracteres especiales usado por la ROM.
 # Cada letra acentuada se codifica como el byte 0x81 seguido de
@@ -34,10 +41,13 @@ _CANONICAL_MAP: dict[bytes, str] = {
     b"\x81W": "Ñ",
 }
 
-# Códigos alternativos detectados en textos menos comunes.
+# Códigos para mayúsculas acentuadas. Son los que usa realmente la ROM de
+# Shinyuden: verificado con los contextos "Él es el único" (0x81j),
+# "Ámbar"/"Áurea" (0x81i), "Ígnea" (0x81k) y "Ópalo"/"ESTACIÓN" (0x81l).
+# Siguen la misma secuencia alfabética que el bloque canónico R-W.
 _ALT_MAP: dict[bytes, str] = {
     b"\x81i": "Á",
-    b"\x81j": "Á",
+    b"\x81j": "É",
     b"\x81k": "Í",
     b"\x81l": "Ó",
     b"\x81m": "Ú",
@@ -57,9 +67,15 @@ _DE_MAP: dict[bytes, str] = {
 
 SPANISH_CHAR_MAP: dict[bytes, str] = {**_CANONICAL_MAP, **_ALT_MAP, **_DE_MAP}
 
+# Mapa inverso para codificar. _ALT_MAP se aplica en ultimo lugar para que
+# tenga prioridad en las mayusculas acentuadas: son los codigos que la ROM
+# de Shinyuden usa realmente (los canonicos 0x81R-0x81W no aparecen ni una
+# sola vez como texto en la ROM). Las minusculas acentuadas y ¡/¿ solo
+# existen en el mapa canonico, que sigue usandose para ellas.
 REVERSE_CHAR_MAP: dict[str, bytes] = {}
-for pair, ch in {**_CANONICAL_MAP, **_ALT_MAP, **_DE_MAP}.items():
-    REVERSE_CHAR_MAP[ch] = pair
+for _map in (_DE_MAP, _CANONICAL_MAP, _ALT_MAP):
+    for pair, ch in _map.items():
+        REVERSE_CHAR_MAP[ch] = pair
 
 def transliterate_de(text: str) -> str: # específico para Traysia DE)
     return (text
@@ -127,7 +143,7 @@ BLOCKS = [
     (0x00C2C4, 0x00C55B),  # BLOQUE 3: Narrativa extra
     (0x1C119,  0x1C232),   # BLOQUE 4: Menú de partida
     (0x12E0D,  0x133FD),   # BLOQUE 5: Items
-    (0x1436C,  0x14787),   # BLOQUE 5: Tiendas
+    (0x1436C,  0x14787),   # BLOQUE 6: Tiendas
 ]
 
 def extract_strings(data: bytes, start: int, end: int, encoding: str) -> List[Dict[str, int | str]]:
@@ -173,6 +189,9 @@ def export_mode(rom_path: Path, json_path: Path, encoding: str):
     print(f"✔ Exportadas {len(strings)} cadenas → {json_path}")
 
 def import_mode(args: argparse.Namespace) -> None:
+    global ENABLE_TRANSLIT
+    if args.no_translit:
+        ENABLE_TRANSLIT = False
     data = bytearray(Path(args.rom).read_bytes())
     entries = json.loads(Path(args.json).read_text(encoding="utf-8"))
     write_strings(data, entries, args.encoding)
@@ -193,6 +212,11 @@ def main() -> None:
     p_imp.add_argument("json", help="Archivo JSON con traduccion")
     p_imp.add_argument("output", help="Ruta de la ROM modificada")
     p_imp.add_argument("--encoding", default="latin-1", help="Codificacion del texto")
+    p_imp.add_argument(
+        "--no-translit",
+        action="store_true",
+        help="No transliterar caracteres alemanes (ä→ae...); usalo si la ROM soporta los codigos 0x81 alemanes",
+    )
 
     args = parser.parse_args()
     if args.cmd == "export":

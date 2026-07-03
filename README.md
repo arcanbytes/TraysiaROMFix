@@ -135,11 +135,12 @@ Análisis técnico de las versiones existentes del juego: la japonesa original, 
 
 ### 🔍 Comparación Técnica
 #### Cabecera de ROM
-Las cabeceras son casi idénticas en todas las versiones, salvo por la fecha del copyright:
-- Japón: (C)T-49 1991.DEC
-- USA y posteriores: (C)T-49 1992.Jan
+Las cabeceras son casi idénticas en todas las versiones, salvo por la fecha del copyright y la región:
+- Japón: (C)T-49 1991.DEC, región `J`, serie `GM T-49073`
+- USA y Evercade: (C)T-49 1992.Jan, región `U`, serie `GM T-49166`
+- Shinyuden: (C)T-49 1992.Jan, región `JUE`, serie `GM T-49166`
 
-Ninguna ROM especifica región (J, U, E), lo que sugiere que se compiló sin ese metadato.
+Todas declaran el mismo rango de SRAM (`0x200001-0x203FFF`, 8 KB en bytes impares).
 
 #### Hashes y Checksums
 | Versión | MD5 (recorte) | Tamaño | Diferencias |

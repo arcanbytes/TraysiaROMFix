@@ -1,0 +1,11 @@
+# Dependencias del flujo de traducción (tools/translate_spanish_to_german.py).
+# El resto de herramientas del repositorio solo usan la librería estándar.
+tqdm
+
+# Motores de traducción: instala únicamente el que vayas a usar (--provider).
+# No se instalan por defecto porque sus dependencias pueden entrar en
+# conflicto entre sí (googletrans fija versiones antiguas de httpx).
+#
+#   pip install googletrans==4.0.0rc1   # proveedor "googletrans" (por defecto)
+#   pip install deepl                   # proveedor "deepl" (requiere API key)
+#   pip install argostranslate          # proveedor "argos" (offline)

@@ -1,10 +1,21 @@
 import json
+import sys
 from pathlib import Path
+
+# Evita errores de codificacion en consolas que no son UTF-8 (p.ej. cp1252)
+try:
+    sys.stdout.reconfigure(errors="replace")
+except AttributeError:
+    pass
 
 # Rutas de los archivos
 legacy_path = Path("translations/german.json")         # Archivo con las traducciones previas
 new_path = Path("translations/spanish.json")          # Archivo nuevo con text_source y offset_hex
 output_path = Path("translations/german_updated.json") # Archivo de salida combinado
+
+for p in (legacy_path, new_path):
+    if not p.exists():
+        raise SystemExit(f"❌ No se encuentra {p}. Ejecuta el script desde la raíz del repositorio.")
 
 # Cargar datos
 old_data = json.loads(legacy_path.read_text(encoding="utf-8"))
