@@ -1,2 +1,4 @@
 /roms
+/translations
+/tools/__pycache__
 /.temp
