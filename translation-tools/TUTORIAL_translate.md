@@ -23,7 +23,7 @@
         PowerShell
 
         ```
-        & D:/Projects/Development/TraysiaROMFix/.venv/Scripts/python.exe d:/Projects/Development/TraysiaROMFix/tools/translate_spanish.py export "roms/Traysia (W).bin" translations/spanish.json
+        & D:/Projects/Development/TraysiaROMFix/.venv/Scripts/python.exe d:/Projects/Development/TraysiaROMFix/translation-tools/translate_spanish.py export "roms/Traysia (W).bin" translations/spanish.json
 
         ```
 
@@ -38,7 +38,7 @@
         PowerShell
 
         ```
-        & D:/Projects/Development/TraysiaROMFix/.venv/Scripts/python.exe d:/Projects/Development/TraysiaROMFix/tools/translate_spanish_to_german.py translations/spanish.json translations/english.json --target en --provider googletrans
+        & D:/Projects/Development/TraysiaROMFix/.venv/Scripts/python.exe d:/Projects/Development/TraysiaROMFix/translation-tools/translate_spanish_to_german.py translations/spanish.json translations/english.json --target en --provider googletrans
 
         ```
 
@@ -53,7 +53,7 @@
         PowerShell
 
         ```
-        & D:/Projects/Development/TraysiaROMFix/.venv/Scripts/python.exe d:/Projects/Development/TraysiaROMFix/tools/translate_spanish_to_german.py translations/spanish.json translations/english.json --mode format --target en
+        & D:/Projects/Development/TraysiaROMFix/.venv/Scripts/python.exe d:/Projects/Development/TraysiaROMFix/translation-tools/translate_spanish_to_german.py translations/spanish.json translations/english.json --mode format --target en
 
         ```
 
@@ -68,7 +68,7 @@
         PowerShell
 
         ```
-        & D:/Projects/Development/TraysiaROMFix/.venv/Scripts/python.exe d:/Projects/Development/TraysiaROMFix/tools/translate_spanish_to_german.py translations/spanish.json translations/english.json --mode check
+        & D:/Projects/Development/TraysiaROMFix/.venv/Scripts/python.exe d:/Projects/Development/TraysiaROMFix/translation-tools/translate_spanish_to_german.py translations/spanish.json translations/english.json --mode check
 
         ```
 
@@ -83,8 +83,8 @@
         PowerShell
 
         ```
-        python tools/translate_spanish_checkfit.py translations/german.json
-        python tools/translate_spanish_checkfit.py translations/english.json
+        python translation-tools/translate_spanish_checkfit.py translations/german.json
+        python translation-tools/translate_spanish_checkfit.py translations/english.json
 
         ```
 
@@ -99,7 +99,7 @@
         PowerShell
 
         ```
-        & d:/Projects/Development/TraysiaROMFix/.venv/Scripts/python.exe d:/Projects/Development/TraysiaROMFix/tools/translate_spanish.py import "roms/Traysia (W).bin" translations/english.json "roms/Traysia (EN).bin"
+        & d:/Projects/Development/TraysiaROMFix/.venv/Scripts/python.exe d:/Projects/Development/TraysiaROMFix/translation-tools/translate_spanish.py import "roms/Traysia (W).bin" translations/english.json "roms/Traysia (EN).bin"
 
         ```
 
@@ -117,4 +117,4 @@
 
 -   **Problemas de Ajuste:** Si las cadenas no caben (paso 5), es necesario editar el archivo JSON de traducción para acortar las frases hasta que encajen.
 
--   **Configuración Inicial:** Asegúrate de que los scripts estén en la ubicación esperada (ej. `d:/Projects/Development/TraysiaROMFix/tools/`) o ajusta las rutas en los comandos.
+-   **Configuración Inicial:** Asegúrate de que los scripts estén en la ubicación esperada (ej. `d:/Projects/Development/TraysiaROMFix/translation-tools/`) o ajusta las rutas en los comandos.

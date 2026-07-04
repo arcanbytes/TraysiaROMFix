@@ -17,7 +17,7 @@ Herramienta CLI para traducir textos de juegos retro desde un archivo `spanish.j
 - Python 3.10+
 - Paquetes:
   ```bash
-  pip install -r tools/requirements.txt
+  pip install -r translation-tools/requirements.txt
   ```
   Esto instala `tqdm`; el motor de traducción se instala aparte según el proveedor elegido (ver comentarios del propio `requirements.txt`).
 
@@ -26,19 +26,19 @@ Herramienta CLI para traducir textos de juegos retro desde un archivo `spanish.j
 ### Traducción
 ```bash
 # a alemán (por defecto)
-python tools/translate_spanish_to_german.py translations/spanish.json translations/german.json --provider googletrans --save-every 25
+python translation-tools/translate_spanish_to_german.py translations/spanish.json translations/german.json --provider googletrans --save-every 25
 # a inglés
-python tools/translate_spanish_to_german.py translations/spanish.json translations/english.json --target en --provider googletrans
+python translation-tools/translate_spanish_to_german.py translations/spanish.json translations/english.json --target en --provider googletrans
 ```
 
 ### Formateo
 ```bash
-python tools/translate_spanish_to_german.py translations/spanish.json translations/german.json --mode format
+python translation-tools/translate_spanish_to_german.py translations/spanish.json translations/german.json --mode format
 ```
 
 ### Validación de formato
 ```bash
-python tools/translate_spanish_to_german.py translations/spanish.json translations/german.json --mode check
+python translation-tools/translate_spanish_to_german.py translations/spanish.json translations/german.json --mode check
 ```
 
 ## Notas

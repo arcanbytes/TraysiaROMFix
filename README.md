@@ -173,10 +173,13 @@ Todas declaran el mismo rango de SRAM (`0x200001-0x203FFF`, 8 KB en bytes impare
 
 ## 🛠️ Herramientas incluidas
 
-Este repositorio incluye una descripción detallada de los scripts desarrollados para el análisis y validación. Puedes encontrar una descripción de cada una de las herramientas y scripts en este [README_tools.md](tools/README_tools.md)
+El repositorio separa las herramientas en dos carpetas según su madurez:
+
+* [`tools/`](tools/README_tools.md) — **scripts estables** que respaldan este README: el generador del parche Anticrash SRAM (`fix_rom_traysia_shinyuden_anticrash.py`) y el analizador de versiones (`traysia_rom_analyzer.py`).
+* [`translation-tools/`](translation-tools/README.md) — **herramientas experimentales (Work in Progress)** de traducción y cambio de idioma: exportar/importar el guion a JSON, traducción automática asistida y pruebas de re-apuntado al texto inglés incluido en la ROM. Son independientes del parche.
 
 ### 📂 Organización de las ROMs
-Guarda todas las ROMs en una carpeta llamada `roms/` ubicada en la raíz del repositorio. Tanto `tools/fix_rom_traysia_shinyuden_anticrash.py` como `tools/traysia_rom_analyzer.py` y otros scripts buscan los archivos directamente en esa ruta.
+Guarda todas las ROMs en una carpeta llamada `roms/` ubicada en la raíz del repositorio. Todos los scripts (de ambas carpetas) se ejecutan desde la raíz del repositorio y buscan los archivos directamente en esa ruta.
 * **Traysia (W).bin**: Versión oficial editada y traducida al castellano por Shinyuden en 2025. 2MB.
 * **Traysia (World) (Evercade).md**: Reedición lanzada en 2022 por Blaze para Evercade y sistemas compatibles, incluido en el cartucho "Renovation Collection 1". 1MB.
 * **Traysia (USA).md**: Traducción de la versión japonesa lanzada en Estados Unidos en abril de 1992.
